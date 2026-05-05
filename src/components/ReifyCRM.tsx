@@ -154,6 +154,44 @@ function parseTravelEnquiryOcr(text:string) {
   };
 }
 
+function normalizePhone(value="") {
+  return String(value).replace(/\D/g,"").replace(/^91(?=\d{10}$)/,"");
+}
+
+function normalizeEmail(value="") {
+  return String(value).trim().toLowerCase();
+}
+
+function normalizeName(value="") {
+  return String(value).trim().toLowerCase().replace(/\s+/g," ");
+}
+
+function markPossibleDuplicates(incoming:any[], existing:any[]) {
+  return incoming.map(lead=>{
+    const phone=normalizePhone(lead.phone);
+    const email=normalizeEmail(lead.email);
+    const name=normalizeName(lead.name);
+    const match=existing.find(existingLead=>{
+      const existingPhone=normalizePhone(existingLead.phone);
+      const existingEmail=normalizeEmail(existingLead.email);
+      const existingName=normalizeName(existingLead.name);
+      return (
+        (lead.gmailMessageId && existingLead.gmailMessageId===lead.gmailMessageId) ||
+        (phone && existingPhone && phone===existingPhone) ||
+        (email && existingEmail && email===existingEmail) ||
+        (name && existingName && name===existingName)
+      );
+    });
+    if(!match) return lead;
+    const duplicateReason=
+      email && normalizeEmail(match.email)===email ? "same email" :
+      phone && normalizePhone(match.phone)===phone ? "same phone" :
+      lead.gmailMessageId && match.gmailMessageId===lead.gmailMessageId ? "same Gmail message" :
+      "same name";
+    return {...lead,possibleDuplicate:true,duplicateReason};
+  });
+}
+
 // ─── EMPTY STATE ──────────────────────────────────────────────────────────────
 const INITIAL_LEADS: any[] = [];
 
@@ -954,7 +992,7 @@ function TeamSettingsPage({team,setTeam,leadAgentIds,setLeadAgentIds}:any) {
   );
 }
 
-function LeadInboxPage({onImport,onManualAdd}:any) {
+function LeadInboxPage({onImport,onManualAdd,existingLeads=[]}:any) {
   const [tab,setTab]=useState<"email"|"screenshot"|"manual">("email");
   const [screenshotData,setScreenshotData]=useState<any>(null);
   const [screenshotPreview,setScreenshotPreview]=useState("");
@@ -1017,7 +1055,7 @@ function LeadInboxPage({onImport,onManualAdd}:any) {
               <div style={{fontSize:13,color:T.muted,lineHeight:1.6,marginBottom:14}}>
                 For now this safely simulates Gmail import. When hosted, this section will read/copy enquiry emails from Gmail without stopping your email flow.
               </div>
-              <GmailImportPanel onImport={onImport}/>
+              <GmailImportPanel onImport={onImport} existingLeads={existingLeads}/>
             </div>
           )}
           {tab==="screenshot"&&(
@@ -1085,7 +1123,7 @@ function LeadInboxPage({onImport,onManualAdd}:any) {
   );
 }
 
-function GmailImportPanel({onImport}:any) {
+function GmailImportPanel({onImport,existingLeads=[]}:any) {
   const [status,setStatus]=useState<"idle"|"searching"|"done"|"error">("idle");
   const [found,setFound]=useState<any[]>([]);
   const [sel,setSel]=useState(new Set<string>());
@@ -1100,7 +1138,7 @@ function GmailImportPanel({onImport}:any) {
       const res=await fetch("/api/gmail/search",{cache:"no-store"});
       const data=await res.json().catch(()=>({}));
       if(!res.ok || !data.ok) throw new Error(data.error || "Could not connect to Gmail.");
-      setFound(data.leads || []);
+      setFound(markPossibleDuplicates(data.leads || [], existingLeads));
       setSel(new Set((data.leads || []).map((l:any)=>l.id)));
       setLastChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
       setStatus("done");
@@ -1117,13 +1155,13 @@ function GmailImportPanel({onImport}:any) {
         const res=await fetch("/api/gmail/search",{cache:"no-store"});
         const data=await res.json();
         if(res.ok && data.ok && data.leads?.length) {
-          onImport(data.leads);
+          onImport(markPossibleDuplicates(data.leads, existingLeads).filter((l:any)=>!l.possibleDuplicate));
           setLastChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
         }
       } catch {}
     },60000);
     return ()=>window.clearInterval(timer);
-  },[autoSync,onImport]);
+  },[autoSync,onImport,existingLeads]);
 
   const toggle=(id:string)=>setSel(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;});
 
@@ -1157,6 +1195,11 @@ function GmailImportPanel({onImport}:any) {
                 <div style={{fontWeight:700,fontSize:14,color:T.navy}}>{l.name}</div>
                 <span style={{fontSize:11,color:"#94a3b8"}}>{new Date(l.receivedAt).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</span>
               </div>
+              {l.possibleDuplicate&&(
+                <div style={{display:"inline-block",marginTop:5,fontSize:11,fontWeight:700,color:"#92400e",background:"#fef3c7",border:"1px solid #fde68a",borderRadius:8,padding:"2px 8px"}}>
+                  Possible duplicate - {l.duplicateReason}
+                </div>
+              )}
               <div style={{fontSize:12,color:T.muted,marginTop:2}}>{l.phone} - {l.email}</div>
               <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap"}}>
                 <span style={{fontSize:11,fontWeight:600,background:"#dbeafe",color:"#1e40af",padding:"2px 8px",borderRadius:20}}>{l.landingPage}</span>
@@ -1170,9 +1213,10 @@ function GmailImportPanel({onImport}:any) {
         </div>
       ))}
       {status==="done"&&found.length>0&&(
-        <div style={{display:"flex",gap:8,marginTop:4}}>
+        <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
           <Btn onClick={()=>onImport(found.filter(l=>sel.has(l.id)))} disabled={sel.size===0}>Import {sel.size} Lead{sel.size!==1?"s":""}</Btn>
           <Btn variant="secondary" onClick={()=>{setStatus("idle");setFound([]);}}>Reset</Btn>
+          {found.some((l:any)=>l.possibleDuplicate)&&<span style={{fontSize:12,color:T.muted}}>Duplicate warnings are informational. You can still import corrected leads.</span>}
         </div>
       )}
       {status==="done"&&found.length===0&&(
@@ -1346,8 +1390,9 @@ export default function ReifyCRM() {
     days:Number(l.days||0),
     paxCount:Number(l.paxCount||1),
     budget:Number(l.budget||0),
-    message:l.message||"",
-    gclid:l.gclid||"",
+      message:l.message||"",
+      gclid:l.gclid||"",
+      gmailMessageId:l.gmailMessageId||"",
     createdAt:new Date().toISOString(),
     lastContact:"",
     nextFollowUp:"",
@@ -1452,7 +1497,7 @@ export default function ReifyCRM() {
         </div>
 
         {tab==="dashboard"&&<OwnerDashboard leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} onSelectLead={selectLead} dailyRoster={dailyRoster} onRosterChange={rosterChange} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
-        {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead}/>}
+        {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads}/>}
         {tab==="team"     &&<TeamPage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
         {(tab==="allleads"||tab==="leads")&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
