@@ -23,6 +23,11 @@ Thumbs.db
 # Vercel deployment
 .vercel/
 
+# Local secrets
+.env
+.env.local
+.env.*.local
+
 # TypeScript
 *.tsbuildinfo
 
@@ -34,3 +39,4 @@ jest-test-results.json
 
 # TurboRepo or monorepo
 turbo/
+
