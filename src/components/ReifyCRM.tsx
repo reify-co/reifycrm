@@ -1360,6 +1360,7 @@ export default function ReifyCRM() {
   const [user,setUser]             =useState("owner");
   const [tab,setTab]               =useState("dashboard");
   const [leads,setLeads]           =useState(INITIAL_LEADS);
+  const [leadsLoaded,setLeadsLoaded]=useState(false);
   const [selected,setSelected]     =useState<any>(null);
   const [showAdd,setShowAdd]       =useState(false);
   const [team,setTeam]             =useState<Record<string,any>>(TEAM);
@@ -1367,6 +1368,21 @@ export default function ReifyCRM() {
   const [leaveData,setLeaveData]   =useState<Record<string,string>>({});
   const [dailyRoster,setDailyRoster]=useState<Record<string,any>>({});
   const [waLead,setWaLead]         =useState<any>(null);
+
+  useEffect(()=>{
+    try {
+      const saved=window.localStorage.getItem("reifycrm_leads");
+      if(saved) setLeads(JSON.parse(saved));
+    } catch {}
+    setLeadsLoaded(true);
+  },[]);
+
+  useEffect(()=>{
+    if(!leadsLoaded) return;
+    try {
+      window.localStorage.setItem("reifycrm_leads",JSON.stringify(leads));
+    } catch {}
+  },[leads,leadsLoaded]);
 
   const visible=user==="owner"?leads:leads.filter((l:any)=>l.assignedTo===user);
   const leaveChange=(id:string,status:string|boolean)=>setLeaveData(p=>({...p,[id]:status===true?"On leave":status===false||status==="Available"?undefined as any:String(status)}));
