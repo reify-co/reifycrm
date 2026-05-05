@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, type ClipboardEvent } from "react";
+import { useEffect, useState, useMemo, type ClipboardEvent } from "react";
 import { createWorker } from "tesseract.js";
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
@@ -1086,29 +1086,68 @@ function LeadInboxPage({onImport,onManualAdd}:any) {
 }
 
 function GmailImportPanel({onImport}:any) {
-  const [status,setStatus]=useState("idle");
+  const [status,setStatus]=useState<"idle"|"searching"|"done"|"error">("idle");
   const [found,setFound]=useState<any[]>([]);
   const [sel,setSel]=useState(new Set<string>());
+  const [error,setError]=useState("");
+  const [autoSync,setAutoSync]=useState(false);
+  const [lastChecked,setLastChecked]=useState("");
 
   async function run() {
-    setStatus("connecting");await new Promise(r=>setTimeout(r,1200));
-    setStatus("searching");await new Promise(r=>setTimeout(r,1500));
-    const mock=[
-      {id:"gm1",name:"Dr Mamatha Sathish",phone:"9845645446",email:"Mamthasatish2020@gmail.com",landingPage:"Northeast India",paxCount:2,tripDate:"2026-05-15",days:5,message:"2 women travelling together",gclid:"Cj0KCQjw2MbP...",source:"Ads-Email",receivedAt:"2026-04-29T08:12:00Z"},
-      {id:"gm2",name:"Varsh",phone:"9385832063",email:"sreevarshiny14@gmail.com",landingPage:"Meghalaya",paxCount:4,tripDate:"2026-09-15",days:5,message:"",gclid:"CjwKCAjwtcHP...",source:"Ads-Email",receivedAt:"2026-04-28T17:44:00Z"},
-      {id:"gm3",name:"Sarani Dutta",phone:"9874488849",email:"sdutta0127@gmail.com",landingPage:"Arunachal Pradesh",paxCount:4,tripDate:"2026-05-19",days:8,message:"",gclid:"CjwKCAjwtcHP...",source:"Ads-Email",receivedAt:"2026-04-28T11:30:00Z"},
-    ];
-    setFound(mock);setSel(new Set(mock.map(l=>l.id)));setStatus("done");
+    setStatus("searching");
+    setError("");
+    try {
+      const res=await fetch("/api/gmail/search",{cache:"no-store"});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok || !data.ok) throw new Error(data.error || "Could not connect to Gmail.");
+      setFound(data.leads || []);
+      setSel(new Set((data.leads || []).map((l:any)=>l.id)));
+      setLastChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
+      setStatus("done");
+    } catch(err:any) {
+      setError(err?.message || "Could not connect to Gmail.");
+      setStatus("error");
+    }
   }
+
+  useEffect(()=>{
+    if(!autoSync) return;
+    const timer=window.setInterval(async()=>{
+      try {
+        const res=await fetch("/api/gmail/search",{cache:"no-store"});
+        const data=await res.json();
+        if(res.ok && data.ok && data.leads?.length) {
+          onImport(data.leads);
+          setLastChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
+        }
+      } catch {}
+    },60000);
+    return ()=>window.clearInterval(timer);
+  },[autoSync,onImport]);
+
   const toggle=(id:string)=>setSel(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;});
 
   return (
     <div>
       <p style={{margin:"0 0 16px",fontSize:13,color:T.muted,lineHeight:1.6}}>
-        Connects to <strong>reifyqueries@gmail.com</strong> and parses "New Travel Enquiry" emails from your landing pages — Northeast India, Meghalaya & Arunachal Pradesh.
+        Connects to <strong>reifyqueries@gmail.com</strong> and fetches "New Travel Enquiry" emails from your landing pages - Northeast India, Meghalaya & Arunachal Pradesh.
       </p>
-      {status==="idle"&&<Btn onClick={run}>📧 Connect Gmail & Search</Btn>}
-      {(status==="connecting"||status==="searching")&&<div style={{padding:"12px 16px",background:T.tealPale,borderRadius:10,fontSize:13,color:T.navy}}>{status==="connecting"?"Connecting to reifyqueries@gmail.com…":"Searching for New Travel Enquiry emails…"}</div>}
+
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"10px 14px",background:autoSync?"#dcfce7":T.faint,borderRadius:10,border:`1px solid ${autoSync?"#86efac":T.border}`}}>
+        <Btn small variant={autoSync?"secondary":"primary"} onClick={()=>setAutoSync(v=>!v)}>{autoSync?"Stop Auto Sync":"Start Auto Sync"}</Btn>
+        <span style={{fontSize:12,color:autoSync?"#15803d":T.muted}}>
+          {autoSync?`Checking Gmail every 60 seconds${lastChecked?` - last checked ${lastChecked}`:""}`:"Use this while the team is working in the CRM."}
+        </span>
+      </div>
+
+      {status==="idle"&&<Btn onClick={run}>Connect Gmail & Search</Btn>}
+      {status==="searching"&&<div style={{padding:"12px 16px",background:T.tealPale,borderRadius:10,fontSize:13,color:T.navy}}>Searching Gmail for new enquiry emails...</div>}
+      {status==="error"&&(
+        <div style={{padding:"12px 14px",background:"#fee2e2",borderRadius:10,fontSize:13,color:"#b91c1c",marginBottom:12}}>
+          {error}
+          <Btn small variant="secondary" style={{marginLeft:10}} onClick={run}>Retry</Btn>
+        </div>
+      )}
       {status==="done"&&found.map(l=>(
         <div key={l.id} onClick={()=>toggle(l.id)} style={{border:`1.5px solid ${sel.has(l.id)?T.teal:T.border}`,borderRadius:10,padding:"12px 14px",marginBottom:8,background:sel.has(l.id)?T.faint:"#fff",cursor:"pointer"}}>
           <div style={{display:"flex",gap:10}}>
@@ -1118,12 +1157,12 @@ function GmailImportPanel({onImport}:any) {
                 <div style={{fontWeight:700,fontSize:14,color:T.navy}}>{l.name}</div>
                 <span style={{fontSize:11,color:"#94a3b8"}}>{new Date(l.receivedAt).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</span>
               </div>
-              <div style={{fontSize:12,color:T.muted,marginTop:2}}>{l.phone} · {l.email}</div>
+              <div style={{fontSize:12,color:T.muted,marginTop:2}}>{l.phone} - {l.email}</div>
               <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap"}}>
-                <span style={{fontSize:11,fontWeight:600,background:"#dbeafe",color:"#1e40af",padding:"2px 8px",borderRadius:20}}>📍 {l.landingPage}</span>
-                <span style={{fontSize:11,color:T.muted}}>👥 {l.paxCount} pax</span>
-                <span style={{fontSize:11,color:T.muted}}>📅 {l.tripDate}</span>
-                <span style={{fontSize:11,color:T.muted}}>🗓 {l.days} days</span>
+                <span style={{fontSize:11,fontWeight:600,background:"#dbeafe",color:"#1e40af",padding:"2px 8px",borderRadius:20}}>{l.landingPage}</span>
+                <span style={{fontSize:11,color:T.muted}}>{l.paxCount} pax</span>
+                <span style={{fontSize:11,color:T.muted}}>{l.tripDate}</span>
+                <span style={{fontSize:11,color:T.muted}}>{l.days} days</span>
               </div>
               {l.message&&<div style={{fontSize:12,color:T.muted,marginTop:6,fontStyle:"italic"}}>"{l.message}"</div>}
             </div>
@@ -1132,18 +1171,23 @@ function GmailImportPanel({onImport}:any) {
       ))}
       {status==="done"&&found.length>0&&(
         <div style={{display:"flex",gap:8,marginTop:4}}>
-          <Btn onClick={()=>onImport(found.filter(l=>sel.has(l.id)))} disabled={sel.size===0}>✅ Import {sel.size} Lead{sel.size!==1?"s":""}</Btn>
+          <Btn onClick={()=>onImport(found.filter(l=>sel.has(l.id)))} disabled={sel.size===0}>Import {sel.size} Lead{sel.size!==1?"s":""}</Btn>
           <Btn variant="secondary" onClick={()=>{setStatus("idle");setFound([]);}}>Reset</Btn>
         </div>
       )}
+      {status==="done"&&found.length===0&&(
+        <div style={{padding:"18px",textAlign:"center",color:T.muted,fontSize:13}}>
+          No new enquiry emails found in the last 14 days.
+        </div>
+      )}
       <div style={{marginTop:16,padding:"12px 14px",background:"#fefce8",border:"1px solid #fde68a",borderRadius:10,fontSize:12,color:"#78350f"}}>
-        <strong style={{color:"#92400e"}}>ℹ️ To enable real Gmail sync:</strong> Connect Gmail MCP in Claude Settings → Connectors, then this will search your actual inbox at reifyqueries@gmail.com.
+        <strong style={{color:"#92400e"}}>Gmail setup:</strong> Vercel must have GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, and GMAIL_TARGET_EMAIL.
       </div>
     </div>
   );
 }
 
-// ─── LEADS TABLE ──────────────────────────────────────────────────────────────
+// --- LEADS TABLE -------------------------------------------------------------
 function LeadsTable({leads,onSelectLead,onAddLeads,currentUser,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
   const [search,setSearch]=useState("");
   const [statusF,setStatusF]=useState("All");
