@@ -1,12 +1,9 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-console.log('SUPABASE URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
 const T = { navy:'#0d2d3a', teal:'#1a7a8a', border:'#cce4ea', faint:'#e8f4f7', muted:'#5a7d88', accent:'#c8e8ed' }
 
 export default function LoginPage() {
-  const supabase = createClient()
   const router   = useRouter()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -17,13 +14,21 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError(error.message)
+
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+
+    const result = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      setError(result.error ?? 'Unable to sign in. Please try again.')
       setLoading(false)
     } else {
-      router.push('/')
-      router.refresh()
+      router.replace('/')
+      window.location.href = '/'
     }
   }
 
