@@ -192,6 +192,41 @@ function markPossibleDuplicates(incoming:any[], existing:any[]) {
   });
 }
 
+function parseLeadDate(value:string) {
+  if(!value) return null;
+  const iso=new Date(value);
+  if(!Number.isNaN(iso.getTime())) return iso;
+  const match=String(value).match(/(\d{1,2})[-/\s]([A-Za-z]{3,}|\d{1,2})[-/\s](\d{2,4})/);
+  if(!match) return null;
+  const monthMap:any={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
+  const month=/^\d+$/.test(match[2])?Number(match[2])-1:monthMap[match[2].slice(0,3).toLowerCase()];
+  const year=Number(match[3].length===2?`20${match[3]}`:match[3]);
+  if(month===undefined || Number.isNaN(year)) return null;
+  return new Date(year,month,Number(match[1]));
+}
+
+function formatLeadDate(value:string) {
+  const date=parseLeadDate(value);
+  return date?date.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"";
+}
+
+function getLeadEndDate(start:string, days:any) {
+  const date=parseLeadDate(start);
+  const count=Number(days||0);
+  if(!date || !count) return "";
+  const end=new Date(date);
+  end.setDate(end.getDate()+Math.max(count-1,0));
+  return end.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+}
+
+function getLeadState(lead:any) {
+  return lead.state || lead.destinationState || lead.region || "";
+}
+
+function primaryTag(tags:any[] = []) {
+  return tags?.[0] || "";
+}
+
 // ─── EMPTY STATE ──────────────────────────────────────────────────────────────
 const INITIAL_LEADS: any[] = [];
 
@@ -1300,41 +1335,37 @@ function LeadsTable({leads,onSelectLead,onAddLeads,currentUser,team=TEAM,leadAge
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
               <thead>
                 <tr style={{background:T.faint,borderBottom:`1px solid ${T.border}`}}>
-                  {["Lead","Source","Campaign / Dest","Tags","Budget","Status","Agent","Trip Date",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.05em",whiteSpace:"nowrap"}}>{h}</th>)}
+                  {["Source","Agent","Lead","Pax","Destination","Days","Start Date","End Date","State","Status","Tag",""].map(h=><th key={h} style={{padding:"10px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.05em",whiteSpace:"nowrap"}}>{h}</th>)}
                 </tr>
               </thead>
               <tbody>
-                {filtered.length===0&&<tr><td colSpan={9} style={{textAlign:"center",padding:"40px",color:"#94a3b8",fontSize:13}}>No leads match your filters.</td></tr>}
-                {filtered.map((lead:any)=>{const agent=team[lead.assignedTo];
+                {filtered.length===0&&<tr><td colSpan={12} style={{textAlign:"center",padding:"40px",color:"#94a3b8",fontSize:13}}>No leads match your filters.</td></tr>}
+                {filtered.map((lead:any)=>{const agent=team[lead.assignedTo]; const tag=primaryTag(lead.tags); const state=getLeadState(lead);
                   return <tr key={lead.id} style={{borderBottom:`1px solid ${T.faint}`,cursor:"pointer"}}
                     onMouseEnter={e=>(e.currentTarget as any).style.background=T.faint}
                     onMouseLeave={e=>(e.currentTarget as any).style.background=""}
                     onClick={()=>onSelectLead(lead)}>
-                    <td style={{padding:"12px 14px"}}>
+                    <td style={{padding:"12px"}}><SourceBadge source={lead.source}/></td>
+                    <td style={{padding:"12px"}}>
+                      {agent&&<div title={agent.name} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",background:agent.color,color:"#fff",fontSize:11,fontWeight:800}}>{agent.initials}</div>}
+                    </td>
+                    <td style={{padding:"12px",minWidth:170}}>
                       <div style={{fontWeight:700,color:T.navy}}>{lead.name}</div>
                       <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{lead.phone}</div>
                       {lead.isOverdue&&<span style={{fontSize:10,color:"#b91c1c",background:"#fee2e2",padding:"1px 5px",borderRadius:6,marginTop:2,display:"inline-block"}}>Overdue</span>}
                       {lead.handover&&<span style={{fontSize:10,color:"#92400e",background:"#fef3c7",padding:"1px 5px",borderRadius:6,marginTop:2,marginLeft:4,display:"inline-block"}}>Handover</span>}
                     </td>
-                    <td style={{padding:"12px 14px"}}><SourceBadge source={lead.source}/></td>
-                    <td style={{padding:"12px 14px"}}>
-                      <div style={{color:T.navy,fontSize:12}}>{lead.landingPage||"—"}</div>
-                      {lead.destination&&lead.destination!==lead.landingPage&&<div style={{fontSize:11,color:T.muted}}>{lead.destination}</div>}
+                    <td style={{padding:"12px",fontWeight:700,color:T.navy}}>{lead.paxCount||"—"}</td>
+                    <td style={{padding:"12px",color:T.navy,fontSize:12,minWidth:130}}>{lead.destination||lead.landingPage||"—"}</td>
+                    <td style={{padding:"12px",fontSize:12,color:T.muted}}>{lead.days?`${lead.days}`:"—"}</td>
+                    <td style={{padding:"12px",fontSize:12,color:T.muted,whiteSpace:"nowrap"}}>{formatLeadDate(lead.tripDate)||"—"}</td>
+                    <td style={{padding:"12px",fontSize:12,color:T.muted,whiteSpace:"nowrap"}}>{getLeadEndDate(lead.tripDate,lead.days)||"—"}</td>
+                    <td style={{padding:"12px",fontSize:12,color:T.muted}}>{state||"—"}</td>
+                    <td style={{padding:"12px"}}><StatusBadge status={lead.status}/></td>
+                    <td style={{padding:"12px"}}>
+                      {tag?<span style={{fontSize:10,background:T.tealPale,color:T.navy,padding:"2px 7px",borderRadius:10,whiteSpace:"nowrap",fontWeight:700}}>{tag}</span>:<span style={{fontSize:12,color:"#94a3b8"}}>—</span>}
                     </td>
-                    <td style={{padding:"12px 14px"}}>
-                      <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                        {(lead.tags||[]).slice(0,2).map((t:string)=><span key={t} style={{fontSize:10,background:T.tealPale,color:T.navy,padding:"1px 6px",borderRadius:10,whiteSpace:"nowrap"}}>{t}</span>)}
-                      </div>
-                    </td>
-                    <td style={{padding:"12px 14px",fontWeight:600,color:T.navy}}>{lead.budget?`₹${Number(lead.budget).toLocaleString("en-IN")}`:"—"}</td>
-                    <td style={{padding:"12px 14px"}}><StatusBadge status={lead.status}/></td>
-                    <td style={{padding:"12px 14px"}}>
-                      {agent&&<div style={{display:"flex",alignItems:"center",gap:6}}><Avatar initials={agent.initials} color={agent.color} size={24}/><span style={{fontSize:12,color:T.muted}}>{agent.name}</span></div>}
-                    </td>
-                    <td style={{padding:"12px 14px",fontSize:12,color:T.muted}}>
-                      {lead.tripDate?new Date(lead.tripDate).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"2-digit"}):"—"}
-                    </td>
-                    <td style={{padding:"12px 14px"}}>
+                    <td style={{padding:"12px"}}>
                       <div style={{display:"flex",gap:4}}>
                         <a href={`https://wa.me/${lead.phone?.replace(/\D/g,"")}`} target="_blank" rel="noopener" onClick={e=>e.stopPropagation()} style={{padding:"4px 8px",borderRadius:6,background:"#dcfce7",color:"#15803d",fontSize:12,textDecoration:"none"}}>WA</a>
                         <a href={`tel:${lead.phone}`} onClick={e=>e.stopPropagation()} style={{padding:"4px 8px",borderRadius:6,background:"#fff7ed",color:"#c2410c",fontSize:12,textDecoration:"none"}}>📞</a>
