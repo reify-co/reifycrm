@@ -550,6 +550,95 @@ function FollowUpTab({lead,onUpdate}:any) {
 }
 
 // ─── REMINDERS TAB ────────────────────────────────────────────────────────────
+function FollowUpLedger({lead,onUpdate}:any) {
+  const today=new Date().toISOString().split("T")[0];
+  const [f,setF]=useState({type:"Call",date:today,notes:"",reminderPreset:"",reminderDate:"",reminderTime:"11:00"});
+  const pending=(lead.reminders||[]).filter((r:any)=>!r.isCompleted);
+  const types=["Call","WhatsApp","Email","Other"];
+  const s=(k:string)=>(v:any)=>setF(p=>({...p,[k]:v}));
+  const input:any={width:"100%",padding:"8px 10px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,color:T.navy,background:T.faint,outline:"none",fontFamily:"inherit",boxSizing:"border-box"};
+  const th:any={textAlign:"left",padding:"8px 10px",fontSize:11,color:T.muted,textTransform:"uppercase",letterSpacing:"0.06em",background:T.faint,borderBottom:`1px solid ${T.border}`};
+  const td:any={padding:"9px 10px",borderBottom:`1px solid ${T.faint}`,verticalAlign:"top",fontSize:13,color:T.navy};
+  function presetDate(preset:string) {
+    const d=new Date();
+    if(!preset) return "";
+    if(preset==="Today") return d.toISOString().split("T")[0];
+    if(preset==="Tomorrow") d.setDate(d.getDate()+1);
+    if(preset==="After 2 days") d.setDate(d.getDate()+2);
+    if(preset==="After 7 days") d.setDate(d.getDate()+7);
+    return d.toISOString().split("T")[0];
+  }
+  function add() {
+    if(!f.notes.trim()) return alert("Please write follow-up notes.");
+    const reminderDate=f.reminderPreset==="Custom"?f.reminderDate:presetDate(f.reminderPreset);
+    const logDate=new Date(`${f.date || today}T${new Date().toTimeString().slice(0,8)}`).toISOString();
+    const log={id:"f"+Date.now(),date:logDate,type:f.type,notes:f.notes,agentId:lead.assignedTo,reminderDate,reminderTime:f.reminderTime,reminderNote:reminderDate?f.notes:""};
+    const reminder=reminderDate?{id:"r"+Date.now(),dueDate:reminderDate,dueTime:f.reminderTime,note:f.notes,isCompleted:false,sourceFollowUpId:log.id}:null;
+    onUpdate({...lead,followUpLog:[log,...(lead.followUpLog||[])],reminders:reminder?[reminder,...(lead.reminders||[])]:lead.reminders,lastContact:new Date().toISOString()});
+    setF({type:"Call",date:today,notes:"",reminderPreset:"",reminderDate:"",reminderTime:"11:00"});
+  }
+  const toggleReminder=(id:string)=>onUpdate({...lead,reminders:(lead.reminders||[]).map((r:any)=>r.id===id?{...r,isCompleted:!r.isCompleted}:r)});
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <span style={{fontWeight:700,color:T.navy,fontSize:14}}>Follow-up Log ({lead.followUpLog?.length||0})</span>
+        {pending.length>0&&<span style={{fontSize:12,fontWeight:700,color:"#92400e",background:"#fef3c7",padding:"4px 9px",borderRadius:999}}>{pending.length} reminder{pending.length!==1?"s":""} pending</span>}
+      </div>
+      <div style={{overflowX:"auto",border:`1px solid ${T.border}`,borderRadius:10,background:"#fff"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:860}}>
+          <thead>
+            <tr>
+              <th style={{...th,width:120}}>Type</th>
+              <th style={{...th,width:130}}>Date</th>
+              <th style={th}>Notes</th>
+              <th style={{...th,width:260}}>Reminder</th>
+              <th style={{...th,width:80}}></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{background:"#fbfdfe"}}>
+              <td style={td}><select value={f.type} onChange={e=>s("type")(e.target.value)} style={input}>{types.map(o=><option key={o} value={o}>{o}</option>)}</select></td>
+              <td style={td}><input type="date" value={f.date} onChange={e=>s("date")(e.target.value)} style={input}/></td>
+              <td style={td}><textarea value={f.notes} onChange={e=>s("notes")(e.target.value)} rows={2} placeholder="Spoken, quote given, call after 2 days..." style={{...input,resize:"vertical"}}/></td>
+              <td style={td}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 86px",gap:6}}>
+                  <select value={f.reminderPreset} onChange={e=>s("reminderPreset")(e.target.value)} style={input}>
+                    <option value="">No reminder</option>
+                    {["Today","Tomorrow","After 2 days","After 7 days","Custom"].map(o=><option key={o} value={o}>{o}</option>)}
+                  </select>
+                  <input type="time" value={f.reminderTime} onChange={e=>s("reminderTime")(e.target.value)} style={input}/>
+                </div>
+                {f.reminderPreset==="Custom"&&<input type="date" value={f.reminderDate} onChange={e=>s("reminderDate")(e.target.value)} style={{...input,marginTop:6}}/>}
+              </td>
+              <td style={td}><Btn small onClick={add}>Save</Btn></td>
+            </tr>
+            {(lead.followUpLog||[]).length===0&&<tr><td colSpan={5} style={{padding:22,textAlign:"center",color:"#94a3b8",fontSize:13}}>No follow-up logs yet.</td></tr>}
+            {(lead.followUpLog||[]).map((log:any)=>(
+              <tr key={log.id}>
+                <td style={td}><TablePill>{log.type||"Other"}</TablePill></td>
+                <td style={td}>{new Date(log.date).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}</td>
+                <td style={{...td,lineHeight:1.5}}>{log.notes}</td>
+                <td style={td}>{log.reminderDate?<span style={{fontSize:12,color:"#92400e",fontWeight:700}}>{log.reminderDate} at {log.reminderTime}</span>:"-"}</td>
+                <td style={td}>{log.agentId&&<span style={{fontSize:11,color:T.muted}}>{TEAM[log.agentId]?.initials||log.agentId}</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {pending.length>0&&(
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
+          {pending.map((r:any)=>(
+            <label key={r.id} style={{display:"inline-flex",gap:7,alignItems:"center",padding:"6px 9px",borderRadius:999,background:"#fffbeb",border:"1px solid #fde68a",fontSize:12,color:"#78350f"}}>
+              <input type="checkbox" checked={r.isCompleted} onChange={()=>toggleReminder(r.id)}/>
+              {r.dueDate} {r.dueTime}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RemindersTab({lead,onUpdate}:any) {
   const [open,setOpen]=useState(false);
   const [f,setF]=useState({dueDate:"",dueTime:"09:00",note:""});
@@ -737,7 +826,7 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
 
       <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 330px",gap:16,alignItems:"start"}}>
         <div>
-          {section("Follow-up Log",<FollowUpTab lead={lead} onUpdate={onUpdate}/>)}
+          {section("Follow-up Log",<FollowUpLedger lead={lead} onUpdate={onUpdate}/>)}
 
           {section("Lead Pass / Handover",
             <div>
