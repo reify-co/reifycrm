@@ -1484,6 +1484,19 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
   const [importedMsg,setImportedMsg]=useState("");
   const [autoSync,setAutoSync]=useState(false);
   const [lastChecked,setLastChecked]=useState("");
+  const [importDate,setImportDate]=useState(new Date().toISOString().split("T")[0]);
+
+  function dateKeyForLead(value:string) {
+    const date=new Date(value);
+    if(Number.isNaN(date.getTime())) return "";
+    return date.toLocaleDateString("en-CA");
+  }
+
+  function freshLeads(leads:any[]) {
+    const importedGmailIds=new Set(existingLeads.map((l:any)=>l.gmailMessageId).filter(Boolean));
+    const marked=markPossibleDuplicates(leads || [], existingLeads);
+    return marked.filter((l:any)=>dateKeyForLead(l.receivedAt)===importDate && !importedGmailIds.has(l.gmailMessageId));
+  }
 
   async function run() {
     setStatus("searching");
@@ -1492,8 +1505,9 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
       const res=await fetch("/api/gmail/search",{cache:"no-store"});
       const data=await res.json().catch(()=>({}));
       if(!res.ok || !data.ok) throw new Error(data.error || "Could not connect to Gmail.");
-      setFound(markPossibleDuplicates(data.leads || [], existingLeads));
-      setSel(new Set((data.leads || []).map((l:any)=>l.id)));
+      const leads=freshLeads(data.leads || []);
+      setFound(leads);
+      setSel(new Set(leads.filter((l:any)=>!l.possibleDuplicate).map((l:any)=>l.id)));
       setLastChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
       setStatus("done");
     } catch(err:any) {
@@ -1509,7 +1523,8 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
         const res=await fetch("/api/gmail/search",{cache:"no-store"});
         const data=await res.json();
         if(res.ok && data.ok && data.leads?.length) {
-          onImport(markPossibleDuplicates(data.leads, existingLeads).filter((l:any)=>!l.possibleDuplicate));
+          const leads=freshLeads(data.leads).filter((l:any)=>!l.possibleDuplicate);
+          if(leads.length) onImport(leads);
           setLastChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
         }
       } catch {}
@@ -1533,6 +1548,12 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
         Connects to <strong>reifyqueries@gmail.com</strong> and fetches "New Travel Enquiry" emails from your landing pages - Northeast India, Meghalaya & Arunachal Pradesh.
       </p>
 
+      <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14,flexWrap:"wrap"}}>
+        <label style={{fontSize:12,fontWeight:700,color:T.muted}}>Import date</label>
+        <input type="date" value={importDate} onChange={e=>setImportDate(e.target.value)} style={{padding:"8px 10px",borderRadius:8,border:`1.5px solid ${T.border}`,background:T.faint,color:T.navy,fontSize:13}}/>
+        <span style={{fontSize:12,color:T.muted}}>Only emails received on this date will be shown.</span>
+      </div>
+
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"10px 14px",background:autoSync?"#dcfce7":T.faint,borderRadius:10,border:`1px solid ${autoSync?"#86efac":T.border}`}}>
         <Btn small variant={autoSync?"secondary":"primary"} onClick={()=>setAutoSync(v=>!v)}>{autoSync?"Stop Auto Sync":"Start Auto Sync"}</Btn>
         <span style={{fontSize:12,color:autoSync?"#15803d":T.muted}}>
@@ -1541,6 +1562,7 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
       </div>
 
       {status==="idle"&&<Btn onClick={run}>Connect Gmail & Search</Btn>}
+      {status==="done"&&<Btn variant="secondary" onClick={run} style={{marginBottom:12}}>Refresh Gmail Search</Btn>}
       {status==="searching"&&<div style={{padding:"12px 16px",background:T.tealPale,borderRadius:10,fontSize:13,color:T.navy}}>Searching Gmail for new enquiry emails...</div>}
       {status==="error"&&(
         <div style={{padding:"12px 14px",background:"#fee2e2",borderRadius:10,fontSize:13,color:"#b91c1c",marginBottom:12}}>
@@ -1588,7 +1610,7 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
       )}
       {status==="done"&&found.length===0&&(
         <div style={{padding:"18px",textAlign:"center",color:T.muted,fontSize:13}}>
-          No new enquiry emails found in the last 14 days.
+          No enquiry emails found for the selected import date, or all matching leads are already imported.
         </div>
       )}
       <div style={{marginTop:16,padding:"12px 14px",background:"#fefce8",border:"1px solid #fde68a",borderRadius:10,fontSize:12,color:"#78350f"}}>
@@ -1658,7 +1680,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
         </div>
       </div>
 
-      {gmail&&<Modal title="Import Leads from Gmail" onClose={()=>setGmail(false)}><GmailImportPanel onImport={importGmail}/></Modal>}
+      {gmail&&<Modal title="Import Leads from Gmail" onClose={()=>setGmail(false)}><GmailImportPanel onImport={importGmail} existingLeads={leads}/></Modal>}
       {view==="kanban"&&<KanbanView leads={filtered} onSelectLead={onSelectLead}/>}
 
       {view==="table"&&(
