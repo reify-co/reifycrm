@@ -227,6 +227,17 @@ function primaryTag(tags:any[] = []) {
   return tags?.[0] || "";
 }
 
+function TablePill({children,tone="default"}:any) {
+  const tones:any={
+    default:{bg:"#eef7f8",color:T.muted,border:"#e4f0f2"},
+    source:{bg:"#eef2fb",color:"#50637d",border:"#e6edf8"},
+    days:{bg:"#edf7f5",color:"#4f847c",border:"#e4f0ed"},
+    status:{bg:"#edf8f0",color:"#4d8b55",border:"#dff0e3"},
+  };
+  const t=tones[tone]||tones.default;
+  return <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",minHeight:26,padding:"4px 10px",borderRadius:6,background:t.bg,color:t.color,border:`1px solid ${t.border}`,fontSize:12,fontWeight:700,whiteSpace:"nowrap"}}>{children}</span>;
+}
+
 // ─── EMPTY STATE ──────────────────────────────────────────────────────────────
 const INITIAL_LEADS: any[] = [];
 
@@ -1345,9 +1356,9 @@ function LeadsTable({leads,onSelectLead,onAddLeads,currentUser,team=TEAM,leadAge
                     onMouseEnter={e=>(e.currentTarget as any).style.background=T.faint}
                     onMouseLeave={e=>(e.currentTarget as any).style.background=""}
                     onClick={()=>onSelectLead(lead)}>
-                    <td style={{padding:"12px"}}><SourceBadge source={lead.source}/></td>
+                    <td style={{padding:"12px"}}><TablePill tone="source">{lead.source||"—"}</TablePill></td>
                     <td style={{padding:"12px"}}>
-                      {agent&&<div title={agent.name} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",background:agent.color,color:"#fff",fontSize:11,fontWeight:800}}>{agent.initials}</div>}
+                      {agent&&<div title={agent.name} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:34,height:28,borderRadius:999,background:"#fff",color:T.muted,border:`1.5px solid ${T.border}`,fontSize:13,fontWeight:800}}>{agent.initials}</div>}
                     </td>
                     <td style={{padding:"12px",minWidth:170}}>
                       <div style={{fontWeight:700,color:T.navy}}>{lead.name}</div>
@@ -1357,11 +1368,11 @@ function LeadsTable({leads,onSelectLead,onAddLeads,currentUser,team=TEAM,leadAge
                     </td>
                     <td style={{padding:"12px",fontWeight:700,color:T.navy}}>{lead.paxCount||"—"}</td>
                     <td style={{padding:"12px",color:T.navy,fontSize:12,minWidth:130}}>{lead.destination||lead.landingPage||"—"}</td>
-                    <td style={{padding:"12px",fontSize:12,color:T.muted}}>{lead.days?`${lead.days}`:"—"}</td>
-                    <td style={{padding:"12px",fontSize:12,color:T.muted,whiteSpace:"nowrap"}}>{formatLeadDate(lead.tripDate)||"—"}</td>
-                    <td style={{padding:"12px",fontSize:12,color:T.muted,whiteSpace:"nowrap"}}>{getLeadEndDate(lead.tripDate,lead.days)||"—"}</td>
+                    <td style={{padding:"12px"}}><TablePill tone="days">{lead.days?`${lead.days} Days`:"—"}</TablePill></td>
+                    <td style={{padding:"12px"}}><TablePill>{formatLeadDate(lead.tripDate)||"—"}</TablePill></td>
+                    <td style={{padding:"12px"}}><TablePill>{getLeadEndDate(lead.tripDate,lead.days)||"—"}</TablePill></td>
                     <td style={{padding:"12px",fontSize:12,color:T.muted}}>{state||"—"}</td>
-                    <td style={{padding:"12px"}}><StatusBadge status={lead.status}/></td>
+                    <td style={{padding:"12px"}}><TablePill tone="status">{lead.status||"—"}</TablePill></td>
                     <td style={{padding:"12px"}}>
                       {tag?<span style={{fontSize:10,background:T.tealPale,color:T.navy,padding:"2px 7px",borderRadius:10,whiteSpace:"nowrap",fontWeight:700}}>{tag}</span>:<span style={{fontSize:12,color:"#94a3b8"}}>—</span>}
                     </td>
