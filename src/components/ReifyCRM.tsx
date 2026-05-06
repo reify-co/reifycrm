@@ -634,6 +634,158 @@ function LeadDrawer({lead,onClose,onUpdate,currentUser,onWA,team=TEAM,leadAgentI
 }
 
 // ─── KANBAN VIEW ──────────────────────────────────────────────────────────────
+function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
+  const [editing,setEditing]=useState(false);
+  const agent=team[lead.assignedTo];
+  const pendingReminders=(lead.reminders||[]).filter((r:any)=>!r.isCompleted);
+  const handoverTo=leadAgentIds.find((id:string)=>id!==lead.assignedTo) || lead.assignedTo;
+  const field=(label:string,value:any,wide=false)=>(
+    <div style={{padding:"10px 0",borderBottom:`1px solid ${T.border}`,gridColumn:wide?"1/-1":undefined}}>
+      <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{label}</div>
+      <div style={{fontSize:14,color:T.navy,fontWeight:600,lineHeight:1.5,wordBreak:"break-word"}}>{value || "-"}</div>
+    </div>
+  );
+  const section=(title:string,children:any,action?:any)=>(
+    <section style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:18,marginBottom:16}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:10}}>
+        <h2 style={{margin:0,fontSize:14,color:T.navy,textTransform:"uppercase",letterSpacing:"0.06em"}}>{title}</h2>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+  function saveLead(updated:any) {
+    onUpdate(updated);
+    setEditing(false);
+  }
+  function requestHandover() {
+    const note=window.prompt(`Handover this lead to ${team[handoverTo]?.name || handoverTo}. Add a short note for context:`,`Please take this lead while I am unavailable.`);
+    if(note===null) return;
+    onUpdate({...lead,assignedTo:handoverTo,handover:{from:lead.assignedTo,to:handoverTo,note:note||"Temporary handover requested.",reason:"Temporary takeover",createdAt:new Date().toISOString(),temporary:true}});
+  }
+  function deleteCurrentLead() {
+    if(window.confirm(`Delete lead for ${lead.name}? This will remove it from the CRM list.`)) onDelete(lead.id);
+  }
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:18}}>
+        <div>
+          <Btn variant="ghost" small onClick={onBack} style={{marginBottom:12}}>Back to leads</Btn>
+          <h1 style={{margin:0,fontFamily:"Georgia,serif",fontSize:30,color:T.navy}}>{lead.name}</h1>
+          <p style={{margin:"6px 0 0",fontSize:13,color:T.muted}}>{lead.phone || "-"} {lead.email?`- ${lead.email}`:""}</p>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
+          <Btn variant="green" onClick={()=>onWA(lead)}>WhatsApp Templates</Btn>
+          <a href={`tel:${lead.phone}`} style={{padding:"8px 16px",borderRadius:8,background:"#fff7ed",color:"#c2410c",fontSize:13,fontWeight:600,textDecoration:"none",display:"inline-flex",alignItems:"center"}}>Call</a>
+          {currentUser==="owner"&&<Btn variant="danger" onClick={deleteCurrentLead}>Delete</Btn>}
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(120px,1fr))",gap:10,marginBottom:16}}>
+        {[
+          ["Source",<TablePill key="source" tone="source">{lead.source||"-"}</TablePill>],
+          ["Agent",agent?<div key="agent" style={{display:"flex",alignItems:"center",gap:8}}><Avatar initials={agent.initials} color={agent.color} size={34}/><strong>{agent.name}</strong></div>:"-"],
+          ["Destination",lead.destination||lead.landingPage||"-"],
+          ["Travel",lead.days?`${lead.days} Days`:"-"],
+          ["Status",<TablePill key="status" tone="status">{lead.status||"New"}</TablePill>],
+        ].map(([label,value]:any)=>(
+          <div key={label} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:"12px 14px",minHeight:70}}>
+            <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>{label}</div>
+            <div style={{fontSize:14,color:T.navy,fontWeight:600}}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 330px",gap:16,alignItems:"start"}}>
+        <div>
+          {section("Lead Info", editing
+            ? <LeadForm lead={lead} onSave={saveLead} onCancel={()=>setEditing(false)} currentUser={currentUser} team={team} leadAgentIds={leadAgentIds}/>
+            : <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 24px"}}>
+                {field("Full Name",lead.name)}
+                {field("Phone",lead.phone)}
+                {field("Email",lead.email)}
+                {field("No. of Pax",lead.paxCount)}
+                {field("Destination",lead.destination||lead.landingPage)}
+                {field("No. of Days",lead.days)}
+                {field("Start Date",formatLeadDate(lead.tripDate))}
+                {field("End Date",getLeadEndDate(lead.tripDate,lead.days))}
+                {field("State",getLeadState(lead))}
+              </div>,
+            !editing&&<Btn small variant="secondary" onClick={()=>setEditing(true)}>Edit Lead Info</Btn>
+          )}
+
+          {section("Enquiry Details",
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 24px"}}>
+              {field("Source",lead.source)}
+              {field("Landing Page / Campaign",lead.landingPage)}
+              {field("Package Type",lead.packageType)}
+              {field("Budget",lead.budget?`Rs ${Number(lead.budget).toLocaleString("en-IN")}`:"")}
+              {field("Message from Enquiry",lead.message,true)}
+              {field("Special Requests",lead.specialRequests,true)}
+              {field("Internal Notes",lead.notes,true)}
+              {field("GCLID",lead.gclid,true)}
+            </div>
+          )}
+
+          {section("Follow-up Log",<FollowUpTab lead={lead} onUpdate={onUpdate}/>)}
+
+          {section("Lead Pass / Handover",
+            <div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 24px"}}>
+                {field("Current Owner",agent?.name||lead.assignedTo)}
+                {field("Suggested Handover To",team[handoverTo]?.name || handoverTo)}
+              </div>
+              {lead.handover&&(
+                <div style={{marginTop:12,padding:"12px 14px",borderRadius:10,background:"#fffbeb",border:"1px solid #fde68a",fontSize:13,color:"#78350f",lineHeight:1.6}}>
+                  Temporary handover from <strong>{team[lead.handover.from]?.name || lead.handover.from}</strong> to <strong>{team[lead.handover.to]?.name || lead.handover.to}</strong>: {lead.handover.note}
+                </div>
+              )}
+              <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}>
+                {currentUser==="owner"&&(
+                  <Btn variant="secondary" onClick={()=>onUpdate({...lead,assignedTo:lead.assignedTo==="nikitha"?"aman":"nikitha"})}>
+                    Pass to {lead.assignedTo==="nikitha"?"Aman":"Nikitha"}
+                  </Btn>
+                )}
+                <Btn variant="ghost" onClick={requestHandover}>Request Temporary Handover</Btn>
+              </div>
+            </div>
+          )}
+
+          {section("Reminders",<RemindersTab lead={lead} onUpdate={onUpdate}/>)}
+        </div>
+
+        <aside style={{position:"sticky",top:0}}>
+          <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:18,marginBottom:14}}>
+            <h2 style={{margin:"0 0 14px",fontSize:14,color:T.navy,textTransform:"uppercase",letterSpacing:"0.06em"}}>Controls</h2>
+            <Inp label="Status" value={lead.status||"New"} onChange={(status:string)=>onUpdate({...lead,status})} options={LEAD_STATUSES}/>
+            <Inp label="Assigned Agent" value={lead.assignedTo} onChange={(assignedTo:string)=>onUpdate({...lead,assignedTo})} options={leadAgentIds}/>
+            <TagPicker tags={lead.tags||[]} onChange={(tags:any)=>onUpdate({...lead,tags})}/>
+            <div style={{display:"grid",gap:8,marginTop:4}}>
+              <Btn onClick={()=>onWA(lead)}>Open WhatsApp Templates</Btn>
+              <Btn variant="secondary" onClick={requestHandover}>Lead Pass / Handover</Btn>
+              <a href={`tel:${lead.phone}`} style={{padding:"8px 16px",borderRadius:8,background:"#fff7ed",color:"#c2410c",fontSize:13,fontWeight:600,textDecoration:"none",textAlign:"center"}}>Call Customer</a>
+              {currentUser==="owner"&&<Btn variant="danger" onClick={deleteCurrentLead}>Delete Lead</Btn>}
+            </div>
+          </div>
+
+          <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:18}}>
+            <h2 style={{margin:"0 0 12px",fontSize:14,color:T.navy,textTransform:"uppercase",letterSpacing:"0.06em"}}>Next Action</h2>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.6}}>
+              {pendingReminders.length
+                ? `${pendingReminders[0].note} on ${pendingReminders[0].dueDate} at ${pendingReminders[0].dueTime}`
+                : "No pending reminder set."}
+            </div>
+            <div style={{marginTop:12,fontSize:12,color:T.muted}}>
+              Last contact: {lead.lastContact?new Date(lead.lastContact).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"-"}
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
 function KanbanView({leads,onSelectLead}:any) {
   return (
     <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:16,alignItems:"flex-start"}}>
@@ -1587,7 +1739,11 @@ export default function ReifyCRM() {
         {tab==="overdue"  &&<LeadsTable leads={visible.filter((l:any)=>l.isOverdue)} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
       </main>
 
-      {selected&&<LeadDrawer lead={selected} onClose={()=>setSelected(null)} onUpdate={updateLead} currentUser={user} onWA={(l:any)=>{setSelected(null);setWaLead(l);}} team={team} leadAgentIds={leadAgentIds}/>}
+      {selected&&(
+        <div style={{position:"fixed",inset:0,zIndex:900,background:T.bg,overflow:"auto",padding:24}}>
+          <LeadWorkspace lead={selected} onBack={()=>setSelected(null)} onUpdate={updateLead} onDelete={deleteLead} currentUser={user} onWA={(l:any)=>setWaLead(l)} team={team} leadAgentIds={leadAgentIds}/>
+        </div>
+      )}
       {showAdd&&<Modal title="Add New Lead" onClose={()=>setShowAdd(false)} width={660}><LeadForm lead={null} onSave={createLead} onCancel={()=>setShowAdd(false)} currentUser={user} leaveData={leaveData} dailyRoster={dailyRoster} team={team} leadAgentIds={leadAgentIds}/></Modal>}
       {waLead&&<Modal title="WhatsApp Templates" onClose={()=>setWaLead(null)} width={560}><WATemplates lead={waLead} onClose={()=>setWaLead(null)}/></Modal>}
     </div>
