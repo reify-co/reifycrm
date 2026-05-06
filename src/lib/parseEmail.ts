@@ -12,6 +12,8 @@ const FIELD_LABELS = [
   'GCLID',
 ]
 
+const FIELD_PATTERN = 'Source|Name|Phone|Email|Pax|Trip\\s*Date|Trip|Date|Days|Message|GCLID'
+
 function decodeBase64Url(data = '') {
   const normalized = data.replace(/-/g, '+').replace(/_/g, '/')
   return Buffer.from(normalized, 'base64').toString('utf8')
@@ -68,6 +70,32 @@ function field(text: string, label: string) {
   return text.match(pattern)?.[1]?.trim() || ''
 }
 
+function travelField(text: string, label: string) {
+  const direct = field(text, label)
+  if (direct) return direct
+
+  const lines = text.split(/\n/).map(line => line.trim()).filter(Boolean)
+  const index = lines.findIndex(line => new RegExp(`^${label}$`, 'i').test(line))
+  if (index >= 0) return lines[index + 1] || ''
+
+  const compact = text.replace(/\n/g, ' ')
+  const match = compact.match(new RegExp(`${label}\\s+([^]+?)(?=\\s+(?:${FIELD_PATTERN})\\s+|$)`, 'i'))
+  return match?.[1]?.trim() || ''
+}
+
+function tripDateField(text: string) {
+  const direct = travelField(text, 'Trip\\s*Date')
+  if (direct) return direct
+
+  const lines = text.split(/\n/).map(line => line.trim()).filter(Boolean)
+  const tripIndex = lines.findIndex(line => /^Trip$/i.test(line))
+  if (tripIndex >= 0 && /^Date$/i.test(lines[tripIndex + 1] || '')) {
+    return lines[tripIndex + 2] || ''
+  }
+
+  return text.match(/\b\d{1,2}[-/\s](?:[A-Za-z]{3,}|\d{1,2})[-/\s]\d{2,4}\b/)?.[0] || ''
+}
+
 function normalizeDate(raw: string) {
   const clean = raw.trim().replace(/[.,]/g, '')
   if (!clean || /^[-–—]+$/.test(clean)) return ''
@@ -105,15 +133,15 @@ export function parseGmailLead(message: gmail_v1.Schema$Message) {
     headers.find(header => header.name?.toLowerCase() === name.toLowerCase())?.value || ''
 
   const text = cleanText(extractBody(message.payload || undefined))
-  const source = field(text, 'Source')
-  const name = field(text, 'Name')
+  const source = travelField(text, 'Source')
+  const name = travelField(text, 'Name')
   const phone = (
-    field(text, 'Phone').match(/\+?\d[\d\s-]{7,}\d/)?.[0] ||
+    travelField(text, 'Phone').match(/\+?\d[\d\s-]{7,}\d/)?.[0] ||
     text.match(/\b\d{9,13}\b/)?.[0] ||
     ''
   ).replace(/\s|-/g, '')
   const email =
-    field(text, 'Email').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ||
+    travelField(text, 'Email').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ||
     text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ||
     ''
 
@@ -130,11 +158,11 @@ export function parseGmailLead(message: gmail_v1.Schema$Message) {
     email,
     source: 'Ads-Email',
     landingPage: destinationFromSource(source) || subject.replace(/new travel enquiry/i, '').trim(),
-    paxCount: Number(field(text, 'Pax').match(/\d+/)?.[0] || 1),
-    tripDate: normalizeDate(field(text, 'Trip Date')),
-    days: Number(field(text, 'Days').match(/\d+/)?.[0] || 0),
-    message: field(text, 'Message').replace(/^[-–—]+$/, ''),
-    gclid: field(text, 'GCLID'),
+    paxCount: Number(travelField(text, 'Pax').match(/\d+/)?.[0] || 1),
+    tripDate: normalizeDate(tripDateField(text)),
+    days: Number(travelField(text, 'Days').match(/\d+/)?.[0] || 0),
+    message: travelField(text, 'Message').replace(/^[-–—]+$/, ''),
+    gclid: travelField(text, 'GCLID'),
     receivedAt,
   }
 }

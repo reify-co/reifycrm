@@ -1183,6 +1183,7 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
   const [found,setFound]=useState<any[]>([]);
   const [sel,setSel]=useState(new Set<string>());
   const [error,setError]=useState("");
+  const [importedMsg,setImportedMsg]=useState("");
   const [autoSync,setAutoSync]=useState(false);
   const [lastChecked,setLastChecked]=useState("");
 
@@ -1219,6 +1220,14 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
   },[autoSync,onImport,existingLeads]);
 
   const toggle=(id:string)=>setSel(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;});
+  function importSelected() {
+    const selected=found.filter(l=>sel.has(l.id));
+    if(selected.length===0) return;
+    onImport(selected);
+    setImportedMsg(`Imported ${selected.length} lead${selected.length!==1?"s":""}.`);
+    setFound(prev=>prev.filter(l=>!sel.has(l.id)));
+    setSel(new Set());
+  }
 
   return (
     <div>
@@ -1239,6 +1248,11 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
         <div style={{padding:"12px 14px",background:"#fee2e2",borderRadius:10,fontSize:13,color:"#b91c1c",marginBottom:12}}>
           {error}
           <Btn small variant="secondary" style={{marginLeft:10}} onClick={run}>Retry</Btn>
+        </div>
+      )}
+      {importedMsg&&(
+        <div style={{padding:"10px 12px",background:"#dcfce7",border:"1px solid #86efac",borderRadius:10,fontSize:13,color:"#15803d",marginBottom:12,fontWeight:700}}>
+          {importedMsg}
         </div>
       )}
       {status==="done"&&found.map(l=>(
@@ -1269,7 +1283,7 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
       ))}
       {status==="done"&&found.length>0&&(
         <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
-          <Btn onClick={()=>onImport(found.filter(l=>sel.has(l.id)))} disabled={sel.size===0}>Import {sel.size} Lead{sel.size!==1?"s":""}</Btn>
+          <Btn onClick={importSelected} disabled={sel.size===0}>Import {sel.size} Lead{sel.size!==1?"s":""}</Btn>
           <Btn variant="secondary" onClick={()=>{setStatus("idle");setFound([]);}}>Reset</Btn>
           {found.some((l:any)=>l.possibleDuplicate)&&<span style={{fontSize:12,color:T.muted}}>Duplicate warnings are informational. You can still import corrected leads.</span>}
         </div>
@@ -1287,7 +1301,7 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
 }
 
 // --- LEADS TABLE -------------------------------------------------------------
-function LeadsTable({leads,onSelectLead,onAddLeads,currentUser,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
+function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
   const [search,setSearch]=useState("");
   const [statusF,setStatusF]=useState("All");
   const [sourceF,setSourceF]=useState("All");
@@ -1389,6 +1403,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,currentUser,team=TEAM,leadAge
                       <div style={{display:"flex",gap:4}}>
                         <a href={`https://wa.me/${lead.phone?.replace(/\D/g,"")}`} target="_blank" rel="noopener" onClick={e=>e.stopPropagation()} style={{padding:"4px 8px",borderRadius:6,background:"#dcfce7",color:"#15803d",fontSize:12,textDecoration:"none"}}>WA</a>
                         <a href={`tel:${lead.phone}`} onClick={e=>e.stopPropagation()} style={{padding:"4px 8px",borderRadius:6,background:"#fff7ed",color:"#c2410c",fontSize:12,textDecoration:"none"}}>📞</a>
+                        {currentUser==="owner"&&<button onClick={e=>{e.stopPropagation(); if(confirm(`Delete lead ${lead.name}?`)) onDeleteLead(lead.id);}} style={{padding:"4px 8px",borderRadius:6,background:"#fee2e2",color:"#b91c1c",fontSize:12,border:"none",cursor:"pointer"}}>Del</button>}
                       </div>
                     </td>
                   </tr>;
@@ -1440,6 +1455,7 @@ export default function ReifyCRM() {
   const rosterChange=(day:string,assignedTo:string,changedBy:string)=>setDailyRoster(p=>({...p,[day]:{assignedTo,changedBy,changedAt:new Date().toISOString()}}));
   const selectLead=(l:any)=>{if(l==="new"){setShowAdd(true);return;}setSelected(l);};
   const updateLead=(u:any)=>{setLeads(p=>p.map(l=>l.id===u.id?u:l));setSelected(u);};
+  const deleteLead=(id:string)=>{setLeads(p=>p.filter(l=>l.id!==id)); if(selected?.id===id) setSelected(null);};
   const createLead=(d:any)=>{setLeads(p=>[{...d,id:"L"+Date.now(),createdAt:new Date().toISOString(),lastContact:"",nextFollowUp:"",daysInPipeline:0,isOverdue:false,followUpLog:[],reminders:[]},...p]);setShowAdd(false);};
   const addLeads=(nl:any[])=>setLeads(p=>[...nl,...p]);
   const buildIncomingLead=(l:any)=>({
@@ -1567,8 +1583,8 @@ export default function ReifyCRM() {
         {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads}/>}
         {tab==="team"     &&<TeamPage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
-        {(tab==="allleads"||tab==="leads")&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
-        {tab==="overdue"  &&<LeadsTable leads={visible.filter((l:any)=>l.isOverdue)} onSelectLead={selectLead} onAddLeads={addLeads} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
+        {(tab==="allleads"||tab==="leads")&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="overdue"  &&<LeadsTable leads={visible.filter((l:any)=>l.isOverdue)} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
       </main>
 
       {selected&&<LeadDrawer lead={selected} onClose={()=>setSelected(null)} onUpdate={updateLead} currentUser={user} onWA={(l:any)=>{setSelected(null);setWaLead(l);}} team={team} leadAgentIds={leadAgentIds}/>}
