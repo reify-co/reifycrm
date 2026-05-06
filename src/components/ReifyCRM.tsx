@@ -465,17 +465,31 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},dailyRoster={},
 // ─── FOLLOW-UP TAB ────────────────────────────────────────────────────────────
 function FollowUpTab({lead,onUpdate}:any) {
   const [open,setOpen]=useState(false);
-  const [f,setF]=useState({type:"Call",notes:"",outcome:"Reached",duration:""});
+  const [f,setF]=useState({type:"Call",notes:"",outcome:"Reached",duration:"",reminderPreset:"",reminderDate:"",reminderTime:"11:00",reminderNote:""});
   const s=(k:string)=>(v:any)=>setF(p=>({...p,[k]:v}));
   const icons:any={Call:"📞",WhatsApp:"💬",Email:"📧",Meeting:"🤝","Video Call":"🎥"};
+  const pending=(lead.reminders||[]).filter((r:any)=>!r.isCompleted);
+  function presetDate(preset:string) {
+    if(!preset) return "";
+    const d=new Date();
+    if(preset==="Tomorrow") d.setDate(d.getDate()+1);
+    if(preset==="After 2 days") d.setDate(d.getDate()+2);
+    if(preset==="After 7 days") d.setDate(d.getDate()+7);
+    return d.toISOString().split("T")[0];
+  }
   const add=()=>{
-    onUpdate({...lead,followUpLog:[{id:"f"+Date.now(),date:new Date().toISOString(),...f,agentId:lead.assignedTo},...lead.followUpLog],lastContact:new Date().toISOString()});
-    setOpen(false);setF({type:"Call",notes:"",outcome:"Reached",duration:""});
+    const reminderDate=f.reminderPreset==="Custom"?f.reminderDate:presetDate(f.reminderPreset);
+    const reminderNote=f.reminderNote || f.notes || "Follow up with customer";
+    const log={id:"f"+Date.now(),date:new Date().toISOString(),type:f.type,notes:f.notes,outcome:f.outcome,duration:f.duration,agentId:lead.assignedTo,reminderDate,reminderTime:f.reminderTime,reminderNote:reminderDate?reminderNote:""};
+    const reminder=reminderDate?{id:"r"+Date.now(),dueDate:reminderDate,dueTime:f.reminderTime,note:reminderNote,isCompleted:false,sourceFollowUpId:log.id}:null;
+    onUpdate({...lead,followUpLog:[log,...lead.followUpLog],reminders:reminder?[reminder,...(lead.reminders||[])]:lead.reminders,lastContact:new Date().toISOString()});
+    setOpen(false);setF({type:"Call",notes:"",outcome:"Reached",duration:"",reminderPreset:"",reminderDate:"",reminderTime:"11:00",reminderNote:""});
   };
+  const toggleReminder=(id:string)=>onUpdate({...lead,reminders:(lead.reminders||[]).map((r:any)=>r.id===id?{...r,isCompleted:!r.isCompleted}:r)});
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <span style={{fontWeight:700,color:T.navy,fontSize:14}}>Follow-up Log ({lead.followUpLog.length})</span>
+        <span style={{fontWeight:700,color:T.navy,fontSize:14}}>Follow-up & Reminders ({lead.followUpLog.length})</span>
         <Btn small onClick={()=>setOpen(!open)}>+ Log Interaction</Btn>
       </div>
       {open&&(
@@ -486,10 +500,30 @@ function FollowUpTab({lead,onUpdate}:any) {
             <Inp label="Duration" value={f.duration} onChange={s("duration")} placeholder="e.g. 15 min"/>
           </div>
           <Inp label="Notes" value={f.notes} onChange={s("notes")} type="textarea"/>
+          <div style={{borderTop:`1px solid ${T.border}`,paddingTop:12,marginTop:2}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.navy,marginBottom:8}}>Next reminder from this follow-up</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 12px"}}>
+              <Inp label="Remind me" value={f.reminderPreset} onChange={s("reminderPreset")} options={["Today","Tomorrow","After 2 days","After 7 days","Custom"]}/>
+              <Inp label="Time" value={f.reminderTime} onChange={s("reminderTime")} type="time"/>
+              {f.reminderPreset==="Custom"&&<Inp label="Custom Date" value={f.reminderDate} onChange={s("reminderDate")} type="date"/>}
+            </div>
+            <Inp label="Reminder Note" value={f.reminderNote} onChange={s("reminderNote")} placeholder="e.g. Call for quote decision"/>
+          </div>
           <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
             <Btn variant="secondary" small onClick={()=>setOpen(false)}>Cancel</Btn>
             <Btn small onClick={add}>Save</Btn>
           </div>
+        </div>
+      )}
+      {pending.length>0&&(
+        <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:12,marginBottom:14}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#78350f",marginBottom:8}}>Pending Reminders</div>
+          {pending.map((r:any)=>(
+            <label key={r.id} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"8px 0",borderTop:`1px solid #fde68a`,fontSize:13,color:T.navy}}>
+              <input type="checkbox" checked={r.isCompleted} onChange={()=>toggleReminder(r.id)} style={{marginTop:2}}/>
+              <span><strong>{r.note}</strong><br/><span style={{fontSize:11,color:"#92400e"}}>{r.dueDate} at {r.dueTime}</span></span>
+            </label>
+          ))}
         </div>
       )}
       {lead.followUpLog.length===0&&<div style={{textAlign:"center",padding:"32px 0",color:"#94a3b8",fontSize:13}}>No follow-up logs yet.</div>}
@@ -504,6 +538,7 @@ function FollowUpTab({lead,onUpdate}:any) {
             <span style={{fontSize:11,color:"#94a3b8"}}>{new Date(log.date).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</span>
           </div>
           <div style={{fontSize:12,color:T.muted,marginTop:6,lineHeight:1.6}}>{log.notes}</div>
+          {log.reminderDate&&<div style={{fontSize:11,color:"#92400e",marginTop:5}}>Reminder set: {log.reminderNote} on {log.reminderDate} at {log.reminderTime}</div>}
           <div style={{marginTop:6}}>
             <span style={{fontSize:11,fontWeight:600,background:T.faint,color:T.muted,padding:"2px 8px",borderRadius:20}}>{log.outcome}</span>
             <span style={{fontSize:11,color:"#94a3b8",marginLeft:8}}>by {TEAM[log.agentId]?.name||log.agentId}</span>
@@ -684,13 +719,14 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(120px,1fr))",gap:10,marginBottom:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(6,minmax(130px,1fr))",gap:10,marginBottom:16}}>
         {[
-          ["Source",<TablePill key="source" tone="source">{lead.source||"-"}</TablePill>],
-          ["Agent",agent?<div key="agent" style={{display:"flex",alignItems:"center",gap:8}}><Avatar initials={agent.initials} color={agent.color} size={34}/><strong>{agent.name}</strong></div>:"-"],
+          ["Lead",<div key="lead"><strong>{lead.name}</strong><br/><span style={{fontSize:12,color:T.muted}}>{lead.phone||"-"}</span></div>],
           ["Destination",lead.destination||lead.landingPage||"-"],
+          ["Pax",lead.paxCount||"-"],
           ["Travel",lead.days?`${lead.days} Days`:"-"],
-          ["Status",<TablePill key="status" tone="status">{lead.status||"New"}</TablePill>],
+          ["Start",formatLeadDate(lead.tripDate)||"-"],
+          ["End",getLeadEndDate(lead.tripDate,lead.days)||"-"],
         ].map(([label,value]:any)=>(
           <div key={label} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:"12px 14px",minHeight:70}}>
             <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>{label}</div>
@@ -757,7 +793,6 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
             </details>
           )}
 
-          {section("Reminders",<RemindersTab lead={lead} onUpdate={onUpdate}/>)}
         </div>
 
         <aside style={{position:"sticky",top:0}}>
@@ -765,7 +800,7 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
             <h2 style={{margin:"0 0 14px",fontSize:14,color:T.navy,textTransform:"uppercase",letterSpacing:"0.06em"}}>Controls</h2>
             <Inp label="Status" value={lead.status||"New"} onChange={(status:string)=>onUpdate({...lead,status})} options={LEAD_STATUSES}/>
             <Inp label="Assigned Agent" value={lead.assignedTo} onChange={(assignedTo:string)=>onUpdate({...lead,assignedTo})} options={leadAgentIds}/>
-            <TagPicker tags={lead.tags||[]} onChange={(tags:any)=>onUpdate({...lead,tags})}/>
+            <TagDropdowns tags={lead.tags||[]} onChange={(tags:any)=>onUpdate({...lead,tags})}/>
             <div style={{display:"grid",gap:8,marginTop:4}}>
               <Btn onClick={()=>onWA(lead)}>Open WhatsApp Templates</Btn>
               <Btn variant="secondary" onClick={requestHandover}>Lead Pass / Handover</Btn>
@@ -787,6 +822,23 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function TagDropdowns({tags,onChange}:any) {
+  const heat=HEAT_TAGS.find(t=>tags?.includes(t))||"";
+  const budget=BUDGET_TAGS.find(t=>tags?.includes(t))||"";
+  const month=MONTHS.find(m=>tags?.some((t:string)=>t.includes(m)))||"";
+  function setTag(group:string[],val:string) {
+    const rest=(tags||[]).filter((t:string)=>!group.includes(t));
+    onChange(val?[...rest,val]:rest);
+  }
+  return (
+    <div style={{display:"grid",gap:10,marginBottom:14}}>
+      <Inp label="Lead Heat" value={heat} onChange={(v:string)=>setTag(HEAT_TAGS,v)} options={HEAT_TAGS}/>
+      <Inp label="Budget Tag" value={budget} onChange={(v:string)=>setTag(BUDGET_TAGS,v)} options={BUDGET_TAGS}/>
+      <Inp label="Travel Month" value={month} onChange={(v:string)=>setTag(MONTHS.map(m=>`📅 ${m}`),v?`📅 ${v}`:"")} options={MONTHS}/>
     </div>
   );
 }
