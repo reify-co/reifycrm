@@ -219,6 +219,15 @@ function getLeadEndDate(start:string, days:any) {
   return end.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
 }
 
+function dateInputValue(value:string) {
+  const date=parseLeadDate(value);
+  if(!date) return "";
+  const yyyy=date.getFullYear();
+  const mm=String(date.getMonth()+1).padStart(2,"0");
+  const dd=String(date.getDate()).padStart(2,"0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function getLeadState(lead:any) {
   return lead.state || lead.destinationState || lead.region || "";
 }
@@ -390,7 +399,7 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},dailyRoster={},
     source:lead?.source||"Ads-Email", status:lead?.status||"New",
     assignedTo:lead?.assignedTo||suggestedAgent,
     landingPage:lead?.landingPage||"", destination:lead?.destination||"",
-    packageType:lead?.packageType||"", tripDate:lead?.tripDate||"",
+    packageType:lead?.packageType||"", tripDate:dateInputValue(lead?.tripDate||""),
     days:lead?.days||"", paxCount:lead?.paxCount||2, budget:lead?.budget||"",
     message:lead?.message||"", specialRequests:lead?.specialRequests||"",
     notes:lead?.notes||"", gclid:lead?.gclid||"",
@@ -1444,7 +1453,7 @@ export default function ReifyCRM() {
     landingPage:l.landingPage||l.destination||"",
     destination:l.destination||l.landingPage||"",
     packageType:l.packageType||"",
-    tripDate:l.tripDate||"",
+    tripDate:dateInputValue(l.tripDate||""),
     days:Number(l.days||0),
     paxCount:Number(l.paxCount||1),
     budget:Number(l.budget||0),

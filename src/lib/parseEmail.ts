@@ -76,14 +76,14 @@ function normalizeDate(raw: string) {
   if (!match) return clean
 
   const months: Record<string, string> = {
-    jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr', may: 'May', jun: 'Jun',
-    jul: 'Jul', aug: 'Aug', sep: 'Sep', sept: 'Sep', oct: 'Oct', nov: 'Nov', dec: 'Dec',
+    jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+    jul: '07', aug: '08', sep: '09', sept: '09', oct: '10', nov: '11', dec: '12',
   }
   const numeric: Record<string, string> = {
-    '1': 'Jan', '01': 'Jan', '2': 'Feb', '02': 'Feb', '3': 'Mar', '03': 'Mar',
-    '4': 'Apr', '04': 'Apr', '5': 'May', '05': 'May', '6': 'Jun', '06': 'Jun',
-    '7': 'Jul', '07': 'Jul', '8': 'Aug', '08': 'Aug', '9': 'Sep', '09': 'Sep',
-    '10': 'Oct', '11': 'Nov', '12': 'Dec',
+    '1': '01', '01': '01', '2': '02', '02': '02', '3': '03', '03': '03',
+    '4': '04', '04': '04', '5': '05', '05': '05', '6': '06', '06': '06',
+    '7': '07', '07': '07', '8': '08', '08': '08', '9': '09', '09': '09',
+    '10': '10', '11': '11', '12': '12',
   }
 
   const day = match[1].padStart(2, '0')
@@ -92,7 +92,7 @@ function normalizeDate(raw: string) {
     : months[match[2].slice(0, 3).toLowerCase()]
   const year = match[3].length === 2 ? `20${match[3]}` : match[3]
 
-  return month ? `${day}-${month}-${year}` : clean
+  return month ? `${year}-${month}-${day}` : clean
 }
 
 function destinationFromSource(source: string) {
