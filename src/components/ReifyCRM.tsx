@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo, type ClipboardEvent } from "react";
 import { createWorker } from "tesseract.js";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const T = {
@@ -16,6 +17,11 @@ const TEAM: Record<string,any> = {
   aman:    {id:"aman",   name:"Aman",       initials:"AM",role:"agent", color:"#1d4ed8"},
 };
 const DEFAULT_LEAD_AGENT_IDS = ["nikitha","aman"];
+const EMAIL_TO_USER: Record<string,string> = {
+  "owner@reifytravels.com":"owner",
+  "nikitha@reifytravels.com":"nikitha",
+  "aman@reifytravels.com":"aman",
+};
 
 const LANDING_PAGES = ["Northeast India","Meghalaya","Arunachal Pradesh","Goa","Kerala","Rajasthan","Kashmir","Leh Ladakh","Himachal Pradesh","Andaman & Nicobar","Others"];
 const DESTINATIONS  = ["Northeast India","Meghalaya","Arunachal Pradesh","Goa","Kerala","Rajasthan","Himachal Pradesh","Uttarakhand","Kashmir","Andaman & Nicobar","Leh Ladakh","Karnataka","Tamil Nadu","Maharashtra","Madhya Pradesh","Gujarat"];
@@ -1744,6 +1750,8 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function ReifyCRM() {
   const [user,setUser]             =useState("owner");
+  const [signedInUser,setSignedInUser]=useState("owner");
+  const [authReady,setAuthReady]   =useState(false);
   const [tab,setTab]               =useState("dashboard");
   const [leads,setLeads]           =useState(INITIAL_LEADS);
   const [leadsLoaded,setLeadsLoaded]=useState(false);
@@ -1754,6 +1762,32 @@ export default function ReifyCRM() {
   const [leaveData,setLeaveData]   =useState<Record<string,string>>({});
   const [dailyRoster,setDailyRoster]=useState<Record<string,any>>({});
   const [waLead,setWaLead]         =useState<any>(null);
+
+  useEffect(()=>{
+    let cancelled=false;
+    async function loadSignedInUser() {
+      try {
+        const supabase=createSupabaseClient();
+        const {data}=await supabase.auth.getUser();
+        const email=(data.user?.email || "").toLowerCase();
+        const mapped=EMAIL_TO_USER[email] || "owner";
+        if(!cancelled) {
+          setSignedInUser(mapped);
+          setUser(mapped);
+          setTab(mapped==="owner"?"dashboard":"leads");
+        }
+      } catch {
+        if(!cancelled) {
+          setSignedInUser("owner");
+          setUser("owner");
+        }
+      } finally {
+        if(!cancelled) setAuthReady(true);
+      }
+    }
+    loadSignedInUser();
+    return ()=>{cancelled=true;};
+  },[]);
 
   useEffect(()=>{
     let cancelled=false;
@@ -1841,6 +1875,10 @@ export default function ReifyCRM() {
     {id:"overdue",  icon:"⚠️",label:"Overdue",     roles:["owner",...leadAgentIds],badge:overdueCount},
   ].filter(n=>n.roles.includes(user));
 
+  if(!authReady) {
+    return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:T.bg,color:T.navy,fontFamily:"'Segoe UI',sans-serif",fontWeight:700}}>Loading CRM...</div>;
+  }
+
   return (
     <div style={{fontFamily:"'Segoe UI',sans-serif",display:"flex",height:"100vh",background:T.bg,overflow:"hidden"}}>
       <style>{`*{box-sizing:border-box;}::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-thumb{background:#cce4ea;border-radius:2px;}`}</style>
@@ -1859,9 +1897,9 @@ export default function ReifyCRM() {
 
         {/* User switcher */}
         <div style={{padding:"12px 14px",borderBottom:`1px solid ${T.navyMid}`}}>
-          <div style={{fontSize:10,color:"#2d5060",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700}}>Viewing As</div>
-          {Object.values(team).map((u:any)=>(
-            <button key={u.id} onClick={()=>{setUser(u.id);setTab(u.id==="owner"?"dashboard":"leads");}} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",cursor:"pointer",marginBottom:4,background:user===u.id?T.navyMid:"transparent",transition:"background 0.15s"}}>
+          <div style={{fontSize:10,color:"#2d5060",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700}}>{signedInUser==="owner"?"Viewing As":"Signed In"}</div>
+          {(signedInUser==="owner"?Object.values(team):[team[signedInUser]]).filter(Boolean).map((u:any)=>(
+            <button key={u.id} onClick={()=>{if(signedInUser==="owner"){setUser(u.id);setTab(u.id==="owner"?"dashboard":"leads");}}} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",cursor:signedInUser==="owner"?"pointer":"default",marginBottom:4,background:user===u.id?T.navyMid:"transparent",transition:"background 0.15s"}}>
               <Avatar initials={u.initials} color={user===u.id?u.color:"#3d6070"} size={24}/>
               <div style={{textAlign:"left"}}>
                 <div style={{fontSize:12,fontWeight:700,color:user===u.id?T.accent:"#4a8090"}}>{u.name}</div>
