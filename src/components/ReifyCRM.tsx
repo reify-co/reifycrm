@@ -1756,11 +1756,28 @@ export default function ReifyCRM() {
   const [waLead,setWaLead]         =useState<any>(null);
 
   useEffect(()=>{
+    let cancelled=false;
     try {
       const saved=window.localStorage.getItem("reifycrm_leads");
       if(saved) setLeads(JSON.parse(saved));
     } catch {}
-    setLeadsLoaded(true);
+    async function loadSharedLeads() {
+      try {
+        const savedRaw=window.localStorage.getItem("reifycrm_leads");
+        const localLeads=savedRaw?JSON.parse(savedRaw):[];
+        const res=await fetch("/api/leads",{cache:"no-store"});
+        const data=await res.json().catch(()=>({}));
+        if(!cancelled && res.ok && data.ok) {
+          setLeads(data.leads || []);
+          if((data.leads || []).length===0 && localLeads.length) {
+            void fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({leads:localLeads})});
+          }
+        }
+      } catch {}
+      if(!cancelled) setLeadsLoaded(true);
+    }
+    loadSharedLeads();
+    return ()=>{cancelled=true;};
   },[]);
 
   useEffect(()=>{
@@ -1774,10 +1791,12 @@ export default function ReifyCRM() {
   const leaveChange=(id:string,status:string|boolean)=>setLeaveData(p=>({...p,[id]:status===true?"On leave":status===false||status==="Available"?undefined as any:String(status)}));
   const rosterChange=(day:string,assignedTo:string,changedBy:string)=>setDailyRoster(p=>({...p,[day]:{assignedTo,changedBy,changedAt:new Date().toISOString()}}));
   const selectLead=(l:any)=>{if(l==="new"){setShowAdd(true);return;}setSelected(l);};
-  const updateLead=(u:any)=>{setLeads(p=>p.map(l=>l.id===u.id?u:l));setSelected(u);};
-  const deleteLead=(id:string)=>{setLeads(p=>p.filter(l=>l.id!==id)); if(selected?.id===id) setSelected(null);};
-  const createLead=(d:any)=>{setLeads(p=>[{...d,id:"L"+Date.now(),createdAt:new Date().toISOString(),lastContact:"",nextFollowUp:"",daysInPipeline:0,isOverdue:false,followUpLog:[],reminders:[]},...p]);setShowAdd(false);};
-  const addLeads=(nl:any[])=>setLeads(p=>[...nl,...p]);
+  const persistLead=(lead:any)=>void fetch("/api/leads",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({lead})});
+  const persistLeads=(newLeads:any[])=>void fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({leads:newLeads})});
+  const updateLead=(u:any)=>{setLeads(p=>p.map(l=>l.id===u.id?u:l));setSelected(u);persistLead(u);};
+  const deleteLead=(id:string)=>{setLeads(p=>p.filter(l=>l.id!==id)); void fetch(`/api/leads?id=${encodeURIComponent(id)}`,{method:"DELETE"}); if(selected?.id===id) setSelected(null);};
+  const createLead=(d:any)=>{const lead={...d,id:"L"+Date.now(),createdAt:new Date().toISOString(),lastContact:"",nextFollowUp:"",daysInPipeline:0,isOverdue:false,followUpLog:[],reminders:[]};setLeads(p=>[lead,...p]);persistLead(lead);setShowAdd(false);};
+  const addLeads=(nl:any[])=>{setLeads(p=>[...nl,...p]);persistLeads(nl);};
   const buildIncomingLead=(l:any)=>({
     id:"L"+Date.now()+Math.random(),
     name:l.name,
@@ -1806,7 +1825,7 @@ export default function ReifyCRM() {
     followUpLog:[],
     reminders:[],
   });
-  const importIncomingLeads=(incoming:any[])=>setLeads(p=>[...incoming.map(buildIncomingLead),...p]);
+  const importIncomingLeads=(incoming:any[])=>{const built=incoming.map(buildIncomingLead);setLeads(p=>[...built,...p]);persistLeads(built);};
   const addIncomingLead=(incoming:any)=>importIncomingLeads([incoming]);
 
   const overdueCount=visible.filter((l:any)=>l.isOverdue).length;
