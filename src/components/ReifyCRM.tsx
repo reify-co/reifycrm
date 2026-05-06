@@ -399,6 +399,7 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},dailyRoster={},
     source:lead?.source||"Ads-Email", status:lead?.status||"New",
     assignedTo:lead?.assignedTo||suggestedAgent,
     landingPage:lead?.landingPage||"", destination:lead?.destination||"",
+    state:lead?.state||lead?.destinationState||lead?.region||"",
     packageType:lead?.packageType||"", tripDate:dateInputValue(lead?.tripDate||""),
     days:lead?.days||"", paxCount:lead?.paxCount||2, budget:lead?.budget||"",
     message:lead?.message||"", specialRequests:lead?.specialRequests||"",
@@ -428,6 +429,7 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},dailyRoster={},
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
         <Inp label="Landing Page / Campaign" value={f.landingPage} onChange={s("landingPage")} options={LANDING_PAGES}/>
         <Inp label="Destination" value={f.destination} onChange={s("destination")} options={DESTINATIONS}/>
+        <Inp label="State" value={f.state} onChange={s("state")} placeholder="e.g. Meghalaya"/>
         <Inp label="Trip Date" value={f.tripDate} onChange={s("tripDate")} type="date"/>
         <Inp label="No. of Days" value={f.days} onChange={s("days")} type="number" placeholder="e.g. 5"/>
         <Inp label="No. of Pax" value={f.paxCount} onChange={s("paxCount")} type="number"/>
@@ -640,14 +642,14 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
   const pendingReminders=(lead.reminders||[]).filter((r:any)=>!r.isCompleted);
   const handoverTo=leadAgentIds.find((id:string)=>id!==lead.assignedTo) || lead.assignedTo;
   const field=(label:string,value:any,wide=false)=>(
-    <div style={{padding:"10px 0",borderBottom:`1px solid ${T.border}`,gridColumn:wide?"1/-1":undefined}}>
-      <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{label}</div>
-      <div style={{fontSize:14,color:T.navy,fontWeight:600,lineHeight:1.5,wordBreak:"break-word"}}>{value || "-"}</div>
+    <div style={{padding:"7px 0",borderBottom:`1px solid ${T.border}`,gridColumn:wide?"1/-1":undefined}}>
+      <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:3}}>{label}</div>
+      <div style={{fontSize:13,color:T.navy,fontWeight:600,lineHeight:1.35,wordBreak:"break-word"}}>{value || "-"}</div>
     </div>
   );
   const section=(title:string,children:any,action?:any)=>(
-    <section style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:18,marginBottom:16}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:10}}>
+    <section style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:14,marginBottom:12}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:8}}>
         <h2 style={{margin:0,fontSize:14,color:T.navy,textTransform:"uppercase",letterSpacing:"0.06em"}}>{title}</h2>
         {action}
       </div>
@@ -699,35 +701,6 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
 
       <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 330px",gap:16,alignItems:"start"}}>
         <div>
-          {section("Lead Info", editing
-            ? <LeadForm lead={lead} onSave={saveLead} onCancel={()=>setEditing(false)} currentUser={currentUser} team={team} leadAgentIds={leadAgentIds}/>
-            : <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 24px"}}>
-                {field("Full Name",lead.name)}
-                {field("Phone",lead.phone)}
-                {field("Email",lead.email)}
-                {field("No. of Pax",lead.paxCount)}
-                {field("Destination",lead.destination||lead.landingPage)}
-                {field("No. of Days",lead.days)}
-                {field("Start Date",formatLeadDate(lead.tripDate))}
-                {field("End Date",getLeadEndDate(lead.tripDate,lead.days))}
-                {field("State",getLeadState(lead))}
-              </div>,
-            !editing&&<Btn small variant="secondary" onClick={()=>setEditing(true)}>Edit Lead Info</Btn>
-          )}
-
-          {section("Enquiry Details",
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 24px"}}>
-              {field("Source",lead.source)}
-              {field("Landing Page / Campaign",lead.landingPage)}
-              {field("Package Type",lead.packageType)}
-              {field("Budget",lead.budget?`Rs ${Number(lead.budget).toLocaleString("en-IN")}`:"")}
-              {field("Message from Enquiry",lead.message,true)}
-              {field("Special Requests",lead.specialRequests,true)}
-              {field("Internal Notes",lead.notes,true)}
-              {field("GCLID",lead.gclid,true)}
-            </div>
-          )}
-
           {section("Follow-up Log",<FollowUpTab lead={lead} onUpdate={onUpdate}/>)}
 
           {section("Lead Pass / Handover",
@@ -750,6 +723,38 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
                 <Btn variant="ghost" onClick={requestHandover}>Request Temporary Handover</Btn>
               </div>
             </div>
+          )}
+
+          {section("Lead Info", editing
+            ? <LeadForm lead={lead} onSave={saveLead} onCancel={()=>setEditing(false)} currentUser={currentUser} team={team} leadAgentIds={leadAgentIds}/>
+            : <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(150px,1fr))",gap:"0 18px"}}>
+                {field("Full Name",lead.name)}
+                {field("Phone",lead.phone)}
+                {field("Email",lead.email)}
+                {field("No. of Pax",lead.paxCount)}
+                {field("Destination",lead.destination||lead.landingPage)}
+                {field("No. of Days",lead.days)}
+                {field("Start Date",formatLeadDate(lead.tripDate))}
+                {field("End Date",getLeadEndDate(lead.tripDate,lead.days))}
+                {field("State",getLeadState(lead))}
+              </div>,
+            !editing&&<Btn small variant="secondary" onClick={()=>setEditing(true)}>Edit Lead Info</Btn>
+          )}
+
+          {section("Enquiry Details",
+            <details>
+              <summary style={{cursor:"pointer",fontSize:13,fontWeight:700,color:T.teal,marginBottom:8}}>Show enquiry email details</summary>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(150px,1fr))",gap:"0 18px"}}>
+              {field("Source",lead.source)}
+              {field("Landing Page / Campaign",lead.landingPage)}
+              {field("Package Type",lead.packageType)}
+              {field("Budget",lead.budget?`Rs ${Number(lead.budget).toLocaleString("en-IN")}`:"")}
+              {field("Message from Enquiry",lead.message,true)}
+              {field("Special Requests",lead.specialRequests,true)}
+              {field("Internal Notes",lead.notes,true)}
+              {field("GCLID",lead.gclid,true)}
+              </div>
+            </details>
           )}
 
           {section("Reminders",<RemindersTab lead={lead} onUpdate={onUpdate}/>)}
