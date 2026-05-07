@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, type ClipboardEvent } from "react";
+import { useEffect, useState, useMemo, useRef, type ClipboardEvent } from "react";
 import { createWorker } from "tesseract.js";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 
@@ -1786,6 +1786,7 @@ export default function ReifyCRM() {
   const [waLead,setWaLead]         =useState<any>(null);
   const [autoSync,setAutoSync]     =useState(false);
   const [lastAutoSyncChecked,setLastAutoSyncChecked]=useState("");
+  const leadsRef=useRef<any[]>([]);
 
   useEffect(()=>{
     let cancelled=false;
@@ -1846,28 +1847,8 @@ export default function ReifyCRM() {
   },[leads,leadsLoaded]);
 
   useEffect(()=>{
-    if(!autoSync) return;
-    let cancelled=false;
-    async function tick() {
-      try {
-        const res=await fetch("/api/gmail/search",{cache:"no-store"});
-        const data=await res.json().catch(()=>({}));
-        if(!res.ok || !data.ok) return;
-        const today=new Date().toLocaleDateString("en-CA");
-        const importedGmailIds=new Set(leads.map((l:any)=>l.gmailMessageId).filter(Boolean));
-        const fresh=markPossibleDuplicates(data.leads || [], leads)
-          .filter((l:any)=>{
-            const received=new Date(l.receivedAt).toLocaleDateString("en-CA");
-            return received===today && !l.possibleDuplicate && !importedGmailIds.has(l.gmailMessageId);
-          });
-        if(!cancelled && fresh.length) importIncomingLeads(fresh);
-        if(!cancelled) setLastAutoSyncChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
-      } catch {}
-    }
-    tick();
-    const timer=window.setInterval(tick,60000);
-    return ()=>{cancelled=true; window.clearInterval(timer);};
-  },[autoSync,leads]);
+    leadsRef.current=leads;
+  },[leads]);
 
   const visible=user==="owner"?leads:leads.filter((l:any)=>l.assignedTo===user);
   const leaveChange=(id:string,status:string|boolean)=>setLeaveData(p=>({...p,[id]:status===true?"On leave":status===false||status==="Available"?undefined as any:String(status)}));
@@ -1917,6 +1898,31 @@ export default function ReifyCRM() {
   });
   const importIncomingLeads=(incoming:any[])=>{const built=incoming.map(buildIncomingLead);setLeads(p=>[...built,...p]);persistLeads(built);};
   const addIncomingLead=(incoming:any)=>importIncomingLeads([incoming]);
+
+  useEffect(()=>{
+    if(!autoSync) return;
+    let cancelled=false;
+    async function tick() {
+      try {
+        const currentLeads=leadsRef.current || [];
+        const res=await fetch("/api/gmail/search",{cache:"no-store"});
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok || !data.ok) return;
+        const today=new Date().toLocaleDateString("en-CA");
+        const importedGmailIds=new Set(currentLeads.map((l:any)=>l.gmailMessageId).filter(Boolean));
+        const fresh=markPossibleDuplicates(data.leads || [], currentLeads)
+          .filter((l:any)=>{
+            const received=new Date(l.receivedAt).toLocaleDateString("en-CA");
+            return received===today && !l.possibleDuplicate && !importedGmailIds.has(l.gmailMessageId);
+          });
+        if(!cancelled && fresh.length) importIncomingLeads(fresh);
+        if(!cancelled) setLastAutoSyncChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
+      } catch {}
+    }
+    tick();
+    const timer=window.setInterval(tick,60000);
+    return ()=>{cancelled=true; window.clearInterval(timer);};
+  },[autoSync]);
 
   const overdueCount=visible.filter((l:any)=>l.isOverdue).length;
   const pendingCount=leads.flatMap((l:any)=>l.reminders.filter((r:any)=>!r.isCompleted)).length;
@@ -1982,6 +1988,15 @@ export default function ReifyCRM() {
             <div style={{fontSize:11,fontWeight:700,color:T.accent}}>🔔 {pendingCount} pending reminder{pendingCount!==1?"s":""}</div>
           </div>
         )}
+
+        <div style={{margin:"0 10px 10px",padding:"10px 12px",background:autoSync?"rgba(34,197,94,0.14)":"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${autoSync?"#22c55e55":T.navyMid}`}}>
+          <button onClick={()=>setAutoSync(v=>!v)} style={{width:"100%",padding:"7px 8px",borderRadius:8,border:"none",background:autoSync?"#dcfce7":T.navyMid,color:autoSync?"#15803d":T.accent,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+            {autoSync?"Auto Sync ON":"Start Auto Sync"}
+          </button>
+          <div style={{fontSize:10,color:autoSync?"#86efac":"#4a8090",marginTop:6,lineHeight:1.4}}>
+            {autoSync?`Runs across all tabs${lastAutoSyncChecked?` - ${lastAutoSyncChecked}`:""}`:"Gmail sync stays active after tab switch."}
+          </div>
+        </div>
 
         <div style={{padding:"12px 14px",borderTop:`1px solid ${T.navyMid}`}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
