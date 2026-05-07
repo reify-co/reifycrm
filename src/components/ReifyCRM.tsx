@@ -1351,7 +1351,7 @@ function TeamSettingsPage({team,setTeam,leadAgentIds,setLeadAgentIds}:any) {
   );
 }
 
-function LeadInboxPage({onImport,onManualAdd,existingLeads=[]}:any) {
+function LeadInboxPage({onImport,onManualAdd,existingLeads=[],autoSync=false,onAutoSyncToggle,lastChecked=""}:any) {
   const [tab,setTab]=useState<"email"|"screenshot"|"manual">("email");
   const [screenshotData,setScreenshotData]=useState<any>(null);
   const [screenshotPreview,setScreenshotPreview]=useState("");
@@ -1414,7 +1414,7 @@ function LeadInboxPage({onImport,onManualAdd,existingLeads=[]}:any) {
               <div style={{fontSize:13,color:T.muted,lineHeight:1.6,marginBottom:14}}>
                 For now this safely simulates Gmail import. When hosted, this section will read/copy enquiry emails from Gmail without stopping your email flow.
               </div>
-              <GmailImportPanel onImport={onImport} existingLeads={existingLeads}/>
+              <GmailImportPanel onImport={onImport} existingLeads={existingLeads} autoSync={autoSync} onAutoSyncToggle={onAutoSyncToggle} lastChecked={lastChecked}/>
             </div>
           )}
           {tab==="screenshot"&&(
@@ -1482,14 +1482,12 @@ function LeadInboxPage({onImport,onManualAdd,existingLeads=[]}:any) {
   );
 }
 
-function GmailImportPanel({onImport,existingLeads=[]}:any) {
+function GmailImportPanel({onImport,existingLeads=[],autoSync=false,onAutoSyncToggle=()=>{},lastChecked=""}:any) {
   const [status,setStatus]=useState<"idle"|"searching"|"done"|"error">("idle");
   const [found,setFound]=useState<any[]>([]);
   const [sel,setSel]=useState(new Set<string>());
   const [error,setError]=useState("");
   const [importedMsg,setImportedMsg]=useState("");
-  const [autoSync,setAutoSync]=useState(false);
-  const [lastChecked,setLastChecked]=useState("");
   const [importDate,setImportDate]=useState(new Date().toISOString().split("T")[0]);
 
   function dateKeyForLead(value:string) {
@@ -1514,29 +1512,12 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
       const leads=freshLeads(data.leads || []);
       setFound(leads);
       setSel(new Set(leads.filter((l:any)=>!l.possibleDuplicate).map((l:any)=>l.id)));
-      setLastChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
       setStatus("done");
     } catch(err:any) {
       setError(err?.message || "Could not connect to Gmail.");
       setStatus("error");
     }
   }
-
-  useEffect(()=>{
-    if(!autoSync) return;
-    const timer=window.setInterval(async()=>{
-      try {
-        const res=await fetch("/api/gmail/search",{cache:"no-store"});
-        const data=await res.json();
-        if(res.ok && data.ok && data.leads?.length) {
-          const leads=freshLeads(data.leads).filter((l:any)=>!l.possibleDuplicate);
-          if(leads.length) onImport(leads);
-          setLastChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
-        }
-      } catch {}
-    },60000);
-    return ()=>window.clearInterval(timer);
-  },[autoSync,onImport,existingLeads]);
 
   const toggle=(id:string)=>setSel(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;});
   function importSelected() {
@@ -1561,7 +1542,7 @@ function GmailImportPanel({onImport,existingLeads=[]}:any) {
       </div>
 
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"10px 14px",background:autoSync?"#dcfce7":T.faint,borderRadius:10,border:`1px solid ${autoSync?"#86efac":T.border}`}}>
-        <Btn small variant={autoSync?"secondary":"primary"} onClick={()=>setAutoSync(v=>!v)}>{autoSync?"Stop Auto Sync":"Start Auto Sync"}</Btn>
+        <Btn small variant={autoSync?"secondary":"primary"} onClick={onAutoSyncToggle}>{autoSync?"Stop Auto Sync":"Start Auto Sync"}</Btn>
         <span style={{fontSize:12,color:autoSync?"#15803d":T.muted}}>
           {autoSync?`Checking Gmail every 60 seconds${lastChecked?` - last checked ${lastChecked}`:""}`:"Use this while the team is working in the CRM."}
         </span>
@@ -1803,6 +1784,8 @@ export default function ReifyCRM() {
   const [leaveData,setLeaveData]   =useState<Record<string,string>>({});
   const [dailyRoster,setDailyRoster]=useState<Record<string,any>>({});
   const [waLead,setWaLead]         =useState<any>(null);
+  const [autoSync,setAutoSync]     =useState(false);
+  const [lastAutoSyncChecked,setLastAutoSyncChecked]=useState("");
 
   useEffect(()=>{
     let cancelled=false;
@@ -1861,6 +1844,30 @@ export default function ReifyCRM() {
       window.localStorage.setItem("reifycrm_leads",JSON.stringify(leads));
     } catch {}
   },[leads,leadsLoaded]);
+
+  useEffect(()=>{
+    if(!autoSync) return;
+    let cancelled=false;
+    async function tick() {
+      try {
+        const res=await fetch("/api/gmail/search",{cache:"no-store"});
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok || !data.ok) return;
+        const today=new Date().toLocaleDateString("en-CA");
+        const importedGmailIds=new Set(leads.map((l:any)=>l.gmailMessageId).filter(Boolean));
+        const fresh=markPossibleDuplicates(data.leads || [], leads)
+          .filter((l:any)=>{
+            const received=new Date(l.receivedAt).toLocaleDateString("en-CA");
+            return received===today && !l.possibleDuplicate && !importedGmailIds.has(l.gmailMessageId);
+          });
+        if(!cancelled && fresh.length) importIncomingLeads(fresh);
+        if(!cancelled) setLastAutoSyncChecked(new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}));
+      } catch {}
+    }
+    tick();
+    const timer=window.setInterval(tick,60000);
+    return ()=>{cancelled=true; window.clearInterval(timer);};
+  },[autoSync,leads]);
 
   const visible=user==="owner"?leads:leads.filter((l:any)=>l.assignedTo===user);
   const leaveChange=(id:string,status:string|boolean)=>setLeaveData(p=>({...p,[id]:status===true?"On leave":status===false||status==="Available"?undefined as any:String(status)}));
@@ -2009,7 +2016,7 @@ export default function ReifyCRM() {
         </div>
 
         {tab==="dashboard"&&<OwnerDashboard leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} onSelectLead={selectLead} dailyRoster={dailyRoster} onRosterChange={rosterChange} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
-        {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads}/>}
+        {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked}/>}
         {tab==="team"     &&<TeamPage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
         {(tab==="allleads"||tab==="leads")&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
