@@ -1641,8 +1641,33 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
     if(statusF!=="All")r=r.filter((l:any)=>l.status===statusF);
     if(sourceF!=="All")r=r.filter((l:any)=>l.source===sourceF);
     if(agentF!=="All")r=r.filter((l:any)=>l.assignedTo===agentF);
-    return r;
+    return [...r].sort((a:any,b:any)=>new Date(b.createdAt||0).getTime()-new Date(a.createdAt||0).getTime());
   },[leads,search,statusF,sourceF,agentF]);
+
+  function leadDateKey(lead:any) {
+    const date=new Date(lead.createdAt || lead.receivedAt || Date.now());
+    return Number.isNaN(date.getTime()) ? "unknown" : date.toLocaleDateString("en-CA");
+  }
+
+  function leadDateLabel(key:string) {
+    if(key==="unknown") return "Date not available";
+    const date=new Date(`${key}T00:00:00`);
+    const today=new Date(); today.setHours(0,0,0,0);
+    const yesterday=new Date(today); yesterday.setDate(today.getDate()-1);
+    if(date.getTime()===today.getTime()) return `Today - ${date.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}`;
+    if(date.getTime()===yesterday.getTime()) return `Yesterday - ${date.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}`;
+    return date.toLocaleDateString("en-IN",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
+  }
+
+  const grouped=useMemo(()=>{
+    const groups:Record<string,any[]>={};
+    filtered.forEach((lead:any)=>{
+      const key=leadDateKey(lead);
+      groups[key]=groups[key]||[];
+      groups[key].push(lead);
+    });
+    return Object.entries(groups).sort(([a],[b])=>b.localeCompare(a));
+  },[filtered]);
 
   function importGmail(importedLeads:any[]) {
     const today=new Date().toISOString().split("T")[0];
@@ -1700,8 +1725,22 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
               </thead>
               <tbody>
                 {filtered.length===0&&<tr><td colSpan={12} style={{textAlign:"center",padding:"40px",color:"#94a3b8",fontSize:13}}>No leads match your filters.</td></tr>}
-                {filtered.map((lead:any)=>{const agent=team[lead.assignedTo]; const tag=primaryTag(lead.tags); const state=getLeadState(lead);
-                  return <tr key={lead.id} style={{borderBottom:`1px solid ${T.faint}`,cursor:"pointer"}}
+                {grouped.flatMap(([dateKey,items])=>{
+                  const counts=leadAgentIds.map((id:string)=>({id,name:team[id]?.name||id,count:items.filter((l:any)=>l.assignedTo===id).length}));
+                  const booked=items.filter((l:any)=>l.status==="Booked").length;
+                  return [
+                    <tr key={`date-${dateKey}`} style={{background:"#f8fcfd"}}>
+                      <td colSpan={12} style={{padding:"12px 14px",borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                          <span style={{fontSize:14,fontWeight:900,color:T.navy}}>{leadDateLabel(dateKey)}</span>
+                          <TablePill>{items.length} Lead{items.length!==1?"s":""}</TablePill>
+                          {counts.map(c=><span key={c.id} style={{fontSize:11,fontWeight:700,color:T.muted,background:"#fff",border:`1px solid ${T.border}`,padding:"3px 8px",borderRadius:999}}>{c.name}: {c.count}</span>)}
+                          {booked>0&&<span style={{fontSize:11,fontWeight:700,color:"#15803d",background:"#dcfce7",padding:"3px 8px",borderRadius:999}}>Booked: {booked}</span>}
+                        </div>
+                      </td>
+                    </tr>,
+                    ...items.map((lead:any)=>{const agent=team[lead.assignedTo]; const tag=primaryTag(lead.tags); const state=getLeadState(lead);
+                      return <tr key={lead.id} style={{borderBottom:`1px solid ${T.faint}`,cursor:"pointer"}}
                     onMouseEnter={e=>(e.currentTarget as any).style.background=T.faint}
                     onMouseLeave={e=>(e.currentTarget as any).style.background=""}
                     onClick={()=>onSelectLead(lead)}>
@@ -1733,6 +1772,8 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
                       </div>
                     </td>
                   </tr>;
+                    })
+                  ];
                 })}
               </tbody>
             </table>
