@@ -1825,6 +1825,14 @@ export default function ReifyCRM() {
   const leaveChange=(id:string,status:string|boolean)=>setLeaveData(p=>({...p,[id]:status===true?"On leave":status===false||status==="Available"?undefined as any:String(status)}));
   const rosterChange=(day:string,assignedTo:string,changedBy:string)=>setDailyRoster(p=>({...p,[day]:{assignedTo,changedBy,changedAt:new Date().toISOString()}}));
   const selectLead=(l:any)=>{if(l==="new"){setShowAdd(true);return;}setSelected(l);};
+  const signOut=async()=>{
+    try {
+      const supabase=createSupabaseClient();
+      await supabase.auth.signOut();
+      window.localStorage.removeItem("reifycrm_leads");
+    } catch {}
+    window.location.href="/login";
+  };
   const persistLead=(lead:any)=>void fetch("/api/leads",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({lead})});
   const persistLeads=(newLeads:any[])=>void fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({leads:newLeads})});
   const updateLead=(u:any)=>{setLeads(p=>p.map(l=>l.id===u.id?u:l));setSelected(u);persistLead(u);};
@@ -1930,11 +1938,14 @@ export default function ReifyCRM() {
         <div style={{padding:"12px 14px",borderTop:`1px solid ${T.navyMid}`}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <Avatar initials={team[user].initials} color={team[user].color} size={28}/>
-            <div>
+            <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,fontWeight:700,color:T.accent}}>{team[user].name}</div>
               <div style={{fontSize:10,color:"#2d5060",textTransform:"capitalize"}}>{team[user].role}</div>
             </div>
           </div>
+          <button onClick={signOut} style={{width:"100%",marginTop:10,padding:"8px 10px",borderRadius:8,border:`1px solid ${T.navyMid}`,background:"transparent",color:"#7fb7c5",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+            Sign Out
+          </button>
         </div>
       </aside>
 
