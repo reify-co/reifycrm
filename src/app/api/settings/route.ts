@@ -7,7 +7,6 @@ const SETTINGS_ID = '__crm_settings__'
 
 const DEFAULT_SETTINGS = {
   activeLeadTaker: null,
-  dailyRoster: {},
 }
 
 export async function GET() {
