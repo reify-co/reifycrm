@@ -18,6 +18,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('crm_leads')
       .select('lead')
+      .neq('id', '__crm_settings__')
       .order('updated_at', { ascending: false })
 
     if (error) throw error

@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo, useRef, type ClipboardEvent } from "react";
 import { createWorker } from "tesseract.js";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+import ItineraryBuilder from "./ItineraryBuilder";
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const T = {
@@ -255,6 +256,33 @@ function TablePill({children,tone="default"}:any) {
 
 // ─── EMPTY STATE ──────────────────────────────────────────────────────────────
 const INITIAL_LEADS: any[] = [];
+const DEV_SAMPLE_LEADS: any[] = [{
+  id:"DEV-MEG-001",
+  name:"Mr. Arjun Mehra",
+  phone:"+91 98765 43210",
+  email:"arjun@example.com",
+  source:"Ads-Email",
+  status:"Interested",
+  assignedTo:"nikitha",
+  landingPage:"Meghalaya",
+  destination:"Meghalaya",
+  packageType:"Family Tour",
+  tripDate:"2026-06-12",
+  days:6,
+  paxCount:2,
+  budget:95000,
+  message:"Local demo lead for itinerary builder testing.",
+  gclid:"",
+  createdAt:new Date().toISOString(),
+  lastContact:"",
+  nextFollowUp:"",
+  daysInPipeline:0,
+  isOverdue:false,
+  tags:["🔥 Hot"],
+  notes:"Dev-only sample. Not saved to Supabase unless edited while connectivity is available.",
+  followUpLog:[],
+  reminders:[],
+}];
 
 // ─── UI ATOMS ─────────────────────────────────────────────────────────────────
 function ReifyLogo() {
@@ -400,10 +428,11 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},dailyRoster={},
   const isNew=!lead?.id;
   const today=new Date().toISOString();
   const suggestedAgent=getDailyLeadOwner(new Date(today),dailyRoster,leaveData,leadAgentIds);
+  const defaultAssignee=isNew&&currentUser!=="owner"?currentUser:suggestedAgent;
   const [f,setF]=useState({
     name:lead?.name||"", phone:lead?.phone||"", email:lead?.email||"",
     source:lead?.source||"Ads-Email", status:lead?.status||"New",
-    assignedTo:lead?.assignedTo||suggestedAgent,
+    assignedTo:lead?.assignedTo||defaultAssignee,
     landingPage:lead?.landingPage||"", destination:lead?.destination||"",
     state:lead?.state||lead?.destinationState||lead?.region||"",
     packageType:lead?.packageType||"", tripDate:dateInputValue(lead?.tripDate||""),
@@ -457,7 +486,7 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},dailyRoster={},
 
       {isNew&&(
         <div style={{padding:"10px 12px",background:T.tealPale,borderRadius:8,fontSize:12,color:T.navy,marginBottom:14}}>
-          Today's roster owner: <strong>{team[suggestedAgent]?.name || suggestedAgent}</strong>. You can still change the assignee for this specific lead before saving.
+          {currentUser==="owner" ? <>Today's lead taker: <strong>{team[suggestedAgent]?.name || suggestedAgent}</strong>. You can still change the assignee for this specific lead before saving.</> : <>This manual lead will be saved under <strong>{team[currentUser]?.name || currentUser}</strong>.</>}
         </div>
       )}
       <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
@@ -768,6 +797,7 @@ function LeadDrawer({lead,onClose,onUpdate,currentUser,onWA,team=TEAM,leadAgentI
 // ─── KANBAN VIEW ──────────────────────────────────────────────────────────────
 function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
   const [editing,setEditing]=useState(false);
+  const [workspaceTab,setWorkspaceTab]=useState("lead");
   const agent=team[lead.assignedTo];
   const pendingReminders=(lead.reminders||[]).filter((r:any)=>!r.isCompleted);
   const handoverTo=leadAgentIds.find((id:string)=>id!==lead.assignedTo) || lead.assignedTo;
@@ -830,6 +860,20 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
         ))}
       </div>
 
+      <div style={{display:"flex",gap:8,marginBottom:16,background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:8,width:"fit-content"}}>
+        {[
+          ["lead","Lead Workspace"],
+          ["itinerary","Itinerary Builder"],
+        ].map(([id,label])=>(
+          <button key={id} onClick={()=>setWorkspaceTab(id)} style={{padding:"9px 14px",borderRadius:8,border:"none",cursor:"pointer",background:workspaceTab===id?T.navy:T.faint,color:workspaceTab===id?"#fff":T.navy,fontSize:13,fontWeight:800,fontFamily:"inherit"}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {workspaceTab==="itinerary" ? (
+        <ItineraryBuilder lead={lead} onUpdate={onUpdate}/>
+      ) : (
       <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 330px",gap:16,alignItems:"start"}}>
         <div>
           {section("Follow-up Log",<FollowUpLedger lead={lead} onUpdate={onUpdate}/>)}
@@ -917,6 +961,7 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
           </div>
         </aside>
       </div>
+      )}
     </div>
   );
 }
@@ -984,12 +1029,13 @@ function KanbanView({leads,onSelectLead}:any) {
 }
 
 // ─── ROTATION BANNER ──────────────────────────────────────────────────────────
-function RotationBanner({leads,leaveData,onLeaveChange,dailyRoster,onRosterChange,currentUser,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
+function RotationBanner({leads,leaveData,onLeaveChange,dailyRoster,onRosterChange,currentUser,activeLeadTaker,onTakeLeads,onStopTakingLeads,onPassLeadTaker,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
   const today=new Date();
   const days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   const schedule=Array.from({length:7},(_,i)=>{const d=new Date(today);d.setDate(today.getDate()+i);const key=dateKey(d);const autoAgentId=getRotationAgent(d.toISOString(),leaveData,leadAgentIds);return{date:d,key,day:d.getDay(),autoAgentId,agentId:getDailyLeadOwner(d,dailyRoster,leaveData,leadAgentIds),override:dailyRoster[key],isToday:i===0};});
-  const nextAgentId=getDailyLeadOwner(today,dailyRoster,leaveData,leadAgentIds);
+  const nextAgentId=activeLeadTaker?.agentId || getDailyLeadOwner(today,dailyRoster,leaveData,leadAgentIds);
   const nextAgent=team[nextAgentId];
+  const otherAgents=leadAgentIds.filter((id:string)=>id!==nextAgentId);
   const weekStart=new Date(today);
   weekStart.setDate(today.getDate()-today.getDay());
   weekStart.setHours(0,0,0,0);
@@ -1016,13 +1062,18 @@ function RotationBanner({leads,leaveData,onLeaveChange,dailyRoster,onRosterChang
             <div>
               <div style={{fontSize:15,fontWeight:800,color:T.navy,fontFamily:"Georgia,serif"}}>{nextAgent.name}</div>
               <div style={{fontSize:12,color:T.muted,marginTop:2}}>
-                New leads follow today's roster
+                {activeLeadTaker?"All Gmail leads are going here now":"New leads follow today's roster"}
               </div>
             </div>
           </div>
+          {activeLeadTaker&&(
+            <div style={{fontSize:11,color:T.muted,marginTop:8}}>
+              Started by {team[activeLeadTaker.startedBy]?.name || activeLeadTaker.startedBy} at {new Date(activeLeadTaker.startedAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}
+            </div>
+          )}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          {balance.map(({id,agent,count,active,available})=>(
+          {balance.map(({id,agent,count,active,available}: any)=>(
             <div key={id} style={{border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 12px",background:available?"#fff":"#fff5f5"}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                 <Avatar initials={agent.initials} color={agent.color} size={24}/>
@@ -1033,6 +1084,20 @@ function RotationBanner({leads,leaveData,onLeaveChange,dailyRoster,onRosterChang
             </div>
           ))}
         </div>
+      </div>
+      <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",padding:"10px 12px",border:`1px solid ${T.border}`,borderRadius:10,background:"#fff",marginBottom:14}}>
+        {leadAgentIds.includes(currentUser)&&(!activeLeadTaker || activeLeadTaker.agentId!==currentUser)&&(
+          <Btn small onClick={()=>onTakeLeads(currentUser)}>I am taking leads today</Btn>
+        )}
+        {activeLeadTaker?.agentId===currentUser&&(
+          <Btn small variant="secondary" onClick={()=>onStopTakingLeads(currentUser)}>Stop taking leads</Btn>
+        )}
+        {activeLeadTaker&&otherAgents.map((id:string)=>(
+          <Btn key={id} small variant="ghost" onClick={()=>onPassLeadTaker(id,currentUser)}>Pass new leads to {team[id]?.name || id}</Btn>
+        ))}
+        <span style={{fontSize:12,color:T.muted}}>
+          Manual leads stay with the person who adds them. Auto/Gmail leads follow the active lead taker.
+        </span>
       </div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <span style={{fontWeight:700,fontSize:13,color:T.navy}}>Availability Controls</span>
@@ -1081,7 +1146,7 @@ function RotationBanner({leads,leaveData,onLeaveChange,dailyRoster,onRosterChang
 }
 
 // ─── OWNER DASHBOARD ──────────────────────────────────────────────────────────
-function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,dailyRoster,onRosterChange,currentUser,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
+function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,dailyRoster,onRosterChange,currentUser,activeLeadTaker,onTakeLeads,onStopTakingLeads,onPassLeadTaker,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
   const total  =leads.length;
   const booked =leads.filter((l:any)=>l.status==="Booked").length;
   const overdue=leads.filter((l:any)=>l.isOverdue).length;
@@ -1104,7 +1169,7 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,dailyRoster,
 
   return (
     <div>
-      <RotationBanner leads={leads} leaveData={leaveData} onLeaveChange={onLeaveChange} dailyRoster={dailyRoster} onRosterChange={onRosterChange} currentUser={currentUser} team={team} leadAgentIds={leadAgentIds}/>
+      <RotationBanner leads={leads} leaveData={leaveData} onLeaveChange={onLeaveChange} dailyRoster={dailyRoster} onRosterChange={onRosterChange} currentUser={currentUser} activeLeadTaker={activeLeadTaker} onTakeLeads={onTakeLeads} onStopTakingLeads={onStopTakingLeads} onPassLeadTaker={onPassLeadTaker} team={team} leadAgentIds={leadAgentIds}/>
 
       {handovers.length>0&&(
         <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:"12px 16px",marginBottom:16}}>
@@ -1198,7 +1263,7 @@ function TeamPage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentIds=DEFAULT_
     <div>
       {/* Agent cards */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
-        {byAgent.map(({agent,total,new:n,active,booked,lost,overdue,revenue,pipeline,sources,statuses})=>(
+        {byAgent.map(({agent,total,new:n,active,booked,lost,overdue,revenue,pipeline,sources,statuses}: any)=>(
           <div key={agent.id} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:14,padding:"20px 22px"}}>
             {/* Header */}
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
@@ -1237,7 +1302,7 @@ function TeamPage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentIds=DEFAULT_
             <div style={{marginBottom:14}}>
               <div style={{fontSize:11,fontWeight:700,color:T.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>By Stage</div>
               <div style={{display:"flex",gap:4}}>
-                {statuses.filter(x=>x.cnt>0).map(({s,cnt})=>{
+                {statuses.filter((x: any)=>x.cnt>0).map(({s,cnt}: any)=>{
                   const m=STATUS_META[s];
                   return <div key={s} style={{flex:cnt,minWidth:28,padding:"6px 4px",background:m.col,borderRadius:6,textAlign:"center",border:`1px solid ${m.bg}`}}>
                     <div style={{fontSize:13,fontWeight:800,color:m.text}}>{cnt}</div>
@@ -1715,7 +1780,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
                         <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                           <span style={{fontSize:14,fontWeight:900,color:T.navy}}>{leadDateLabel(dateKey)}</span>
                           <TablePill>{items.length} Lead{items.length!==1?"s":""}</TablePill>
-                          {counts.map(c=><span key={c.id} style={{fontSize:11,fontWeight:700,color:T.muted,background:"#fff",border:`1px solid ${T.border}`,padding:"3px 8px",borderRadius:999}}>{c.name}: {c.count}</span>)}
+                          {counts.map((c: any)=><span key={c.id} style={{fontSize:11,fontWeight:700,color:T.muted,background:"#fff",border:`1px solid ${T.border}`,padding:"3px 8px",borderRadius:999}}>{c.name}: {c.count}</span>)}
                           {booked>0&&<span style={{fontSize:11,fontWeight:700,color:"#15803d",background:"#dcfce7",padding:"3px 8px",borderRadius:999}}>Booked: {booked}</span>}
                         </div>
                       </td>
@@ -1783,6 +1848,7 @@ export default function ReifyCRM() {
   const [leadAgentIds,setLeadAgentIds]=useState<string[]>(DEFAULT_LEAD_AGENT_IDS);
   const [leaveData,setLeaveData]   =useState<Record<string,string>>({});
   const [dailyRoster,setDailyRoster]=useState<Record<string,any>>({});
+  const [activeLeadTaker,setActiveLeadTaker]=useState<any>(null);
   const [waLead,setWaLead]         =useState<any>(null);
   const [autoSync,setAutoSync]     =useState(false);
   const [lastAutoSyncChecked,setLastAutoSyncChecked]=useState("");
@@ -1827,12 +1893,25 @@ export default function ReifyCRM() {
         const res=await fetch("/api/leads",{cache:"no-store"});
         const data=await res.json().catch(()=>({}));
         if(!cancelled && res.ok && data.ok) {
-          setLeads(data.leads || []);
+          const sharedLeads=data.leads || [];
+          if(sharedLeads.length===0 && localLeads.length===0 && process.env.NODE_ENV==="development") {
+            setLeads(DEV_SAMPLE_LEADS);
+          } else {
+            setLeads(sharedLeads);
+          }
           if((data.leads || []).length===0 && localLeads.length) {
             void fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({leads:localLeads})});
           }
         }
-      } catch {}
+      } catch {
+        try {
+          const savedRaw=window.localStorage.getItem("reifycrm_leads");
+          const localLeads=savedRaw?JSON.parse(savedRaw):[];
+          if(!cancelled && process.env.NODE_ENV==="development" && localLeads.length===0) {
+            setLeads(DEV_SAMPLE_LEADS);
+          }
+        } catch {}
+      }
       if(!cancelled) setLeadsLoaded(true);
     }
     loadSharedLeads();
@@ -1850,9 +1929,37 @@ export default function ReifyCRM() {
     leadsRef.current=leads;
   },[leads]);
 
+  useEffect(()=>{
+    let cancelled=false;
+    async function loadSettings() {
+      try {
+        const res=await fetch("/api/settings",{cache:"no-store"});
+        const data=await res.json().catch(()=>({}));
+        if(!cancelled && res.ok && data.ok) {
+          setActiveLeadTaker(data.settings?.activeLeadTaker || null);
+          setDailyRoster(data.settings?.dailyRoster || {});
+        }
+      } catch {}
+    }
+    loadSettings();
+    const timer=window.setInterval(loadSettings,30000);
+    return ()=>{cancelled=true;window.clearInterval(timer);};
+  },[]);
+
   const visible=user==="owner"?leads:leads.filter((l:any)=>l.assignedTo===user);
   const leaveChange=(id:string,status:string|boolean)=>setLeaveData(p=>({...p,[id]:status===true?"On leave":status===false||status==="Available"?undefined as any:String(status)}));
-  const rosterChange=(day:string,assignedTo:string,changedBy:string)=>setDailyRoster(p=>({...p,[day]:{assignedTo,changedBy,changedAt:new Date().toISOString()}}));
+  const rosterChange=(day:string,assignedTo:string,changedBy:string)=>setDailyRoster(p=>{
+    const next={...p,[day]:{assignedTo,changedBy,changedAt:new Date().toISOString()}};
+    void fetch("/api/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings:{dailyRoster:next}})});
+    return next;
+  });
+  const saveActiveLeadTaker=(value:any)=>{
+    setActiveLeadTaker(value);
+    void fetch("/api/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings:{activeLeadTaker:value}})});
+  };
+  const takeLeads=(agentId:string)=>saveActiveLeadTaker({agentId,startedBy:user,startedAt:new Date().toISOString()});
+  const stopTakingLeads=(changedBy:string)=>saveActiveLeadTaker(null);
+  const passLeadTaker=(agentId:string,changedBy:string)=>saveActiveLeadTaker({agentId,startedBy:changedBy,startedAt:new Date().toISOString(),passed:true});
   const selectLead=(l:any)=>{if(l==="new"){setShowAdd(true);return;}setSelected(l);};
   const signOut=async()=>{
     try {
@@ -1875,7 +1982,7 @@ export default function ReifyCRM() {
     email:l.email||"",
     source:l.source||"Ads-Email",
     status:"New",
-    assignedTo:getDailyLeadOwner(new Date(),dailyRoster,leaveData,leadAgentIds),
+    assignedTo:activeLeadTaker?.agentId || getDailyLeadOwner(new Date(),dailyRoster,leaveData,leadAgentIds),
     landingPage:l.landingPage||l.destination||"",
     destination:l.destination||l.landingPage||"",
     packageType:l.packageType||"",
@@ -1922,7 +2029,7 @@ export default function ReifyCRM() {
     tick();
     const timer=window.setInterval(tick,60000);
     return ()=>{cancelled=true; window.clearInterval(timer);};
-  },[autoSync]);
+  },[autoSync,activeLeadTaker,dailyRoster,leaveData,leadAgentIds]);
 
   const overdueCount=visible.filter((l:any)=>l.isOverdue).length;
   const pendingCount=leads.flatMap((l:any)=>l.reminders.filter((r:any)=>!r.isCompleted)).length;
@@ -1989,6 +2096,33 @@ export default function ReifyCRM() {
           </div>
         )}
 
+        <div style={{margin:"0 10px 10px",padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${T.navyMid}`}}>
+          <div style={{fontSize:10,color:"#4a8090",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>New Lead Taker</div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            {activeLeadTaker?.agentId&&team[activeLeadTaker.agentId]?<Avatar initials={team[activeLeadTaker.agentId].initials} color={team[activeLeadTaker.agentId].color} size={24}/>:null}
+            <div style={{fontSize:12,fontWeight:800,color:T.accent}}>
+              {activeLeadTaker?.agentId ? team[activeLeadTaker.agentId]?.name || activeLeadTaker.agentId : "No one active"}
+            </div>
+          </div>
+          {leadAgentIds.includes(user)&&activeLeadTaker?.agentId!==user&&(
+            <button onClick={()=>takeLeads(user)} style={{width:"100%",padding:"7px 8px",borderRadius:8,border:"none",background:T.navyMid,color:T.accent,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+              I am taking leads
+            </button>
+          )}
+          {leadAgentIds.includes(user)&&activeLeadTaker?.agentId===user&&(
+            <div style={{display:"grid",gap:6}}>
+              <button onClick={()=>stopTakingLeads(user)} style={{width:"100%",padding:"7px 8px",borderRadius:8,border:"none",background:"#dcfce7",color:"#15803d",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                Stop taking leads
+              </button>
+              {leadAgentIds.filter((id:string)=>id!==user).map((id:string)=>(
+                <button key={id} onClick={()=>passLeadTaker(id,user)} style={{width:"100%",padding:"6px 8px",borderRadius:8,border:`1px solid ${T.navyMid}`,background:"transparent",color:"#7fb7c5",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                  Pass to {team[id]?.name || id}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div style={{margin:"0 10px 10px",padding:"10px 12px",background:autoSync?"rgba(34,197,94,0.14)":"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${autoSync?"#22c55e55":T.navyMid}`}}>
           <button onClick={()=>setAutoSync(v=>!v)} style={{width:"100%",padding:"7px 8px",borderRadius:8,border:"none",background:autoSync?"#dcfce7":T.navyMid,color:autoSync?"#15803d":T.accent,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
             {autoSync?"Auto Sync ON":"Start Auto Sync"}
@@ -2030,7 +2164,7 @@ export default function ReifyCRM() {
           {(tab==="allleads"||tab==="leads")&&<Btn onClick={()=>setShowAdd(true)}>+ Add Lead Manually</Btn>}
         </div>
 
-        {tab==="dashboard"&&<OwnerDashboard leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} onSelectLead={selectLead} dailyRoster={dailyRoster} onRosterChange={rosterChange} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="dashboard"&&<OwnerDashboard leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} onSelectLead={selectLead} dailyRoster={dailyRoster} onRosterChange={rosterChange} currentUser={user} activeLeadTaker={activeLeadTaker} onTakeLeads={takeLeads} onStopTakingLeads={stopTakingLeads} onPassLeadTaker={passLeadTaker} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked}/>}
         {tab==="team"     &&<TeamPage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
