@@ -27,7 +27,8 @@ const EMAIL_TO_USER: Record<string,string> = {
 const LANDING_PAGES = ["Northeast India","Meghalaya","Arunachal Pradesh","Goa","Kerala","Rajasthan","Kashmir","Leh Ladakh","Himachal Pradesh","Andaman & Nicobar","Others"];
 const DESTINATIONS  = ["Northeast India","Meghalaya","Arunachal Pradesh","Goa","Kerala","Rajasthan","Himachal Pradesh","Uttarakhand","Kashmir","Andaman & Nicobar","Leh Ladakh","Karnataka","Tamil Nadu","Maharashtra","Madhya Pradesh","Gujarat"];
 const PACKAGE_TYPES = ["Honeymoon","Family Tour","Group Tour","Solo Trip","Adventure","Pilgrimage","Corporate/MICE","Weekend Getaway"];
-const LEAD_STATUSES = ["New","Contacted","Interested","Proposal Sent","Negotiating","Booked","Lost"];
+const LEAD_STATUSES = ["New","Contacted","No Response","Proposal Sent","Interested","Negotiating","Booked","Lost"];
+const KANBAN_STATUSES = ["New","Contacted","No Response","Proposal Sent","Interested","Booked"];
 const LEAD_SOURCES  = ["Ads-Email","Ads-WhatsApp","Ads-Call","Ref","Repeat","Email","Others"];
 const FOLLOWUP_TYPES    = ["Call","WhatsApp","Email","Meeting","Video Call"];
 const FOLLOWUP_OUTCOMES = ["Reached","No Answer","Callback Requested","Sent Info","Meeting Scheduled","Not Interested","Converted"];
@@ -38,6 +39,7 @@ const MONTHS     = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct",
 const STATUS_META: Record<string,any> = {
   "New":          {bg:"#dbeafe",text:"#1e40af",dot:"#3b82f6",col:"#eff6ff"},
   "Contacted":    {bg:"#e0f4f7",text:"#0d2d3a",dot:"#1a7a8a",col:"#f0fafb"},
+  "No Response":  {bg:"#e5e7eb",text:"#475569",dot:"#94a3b8",col:"#f8fafc"},
   "Interested":   {bg:"#fef9c3",text:"#92400e",dot:"#eab308",col:"#fefce8"},
   "Proposal Sent":{bg:"#f3e8ff",text:"#6b21a8",dot:"#a855f7",col:"#faf5ff"},
   "Negotiating":  {bg:"#fff7ed",text:"#c2410c",dot:"#f97316",col:"#fff7ed"},
@@ -437,7 +439,7 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},team=TEAM,leadA
     landingPage:lead?.landingPage||"", destination:lead?.destination||"",
     state:lead?.state||lead?.destinationState||lead?.region||"",
     packageType:lead?.packageType||"", tripDate:dateInputValue(lead?.tripDate||""),
-    days:lead?.days||"", paxCount:lead?.paxCount||2, budget:lead?.budget||"",
+    days:lead?.days||"", paxCount:lead?.paxCount||2, budget:lead?.budget||"", quoteSentValue:lead?.quoteSentValue||"",
     message:lead?.message||"", specialRequests:lead?.specialRequests||"",
     notes:lead?.notes||"", gclid:lead?.gclid||"",
     tags:lead?.tags||[],
@@ -446,7 +448,7 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},team=TEAM,leadA
   const submit=()=>{
     if(!f.name||!f.phone) return alert("Name and phone are required.");
     if(!f.assignedTo) return alert("Please choose a team member for this lead.");
-    onSave({...lead,...f,paxCount:Number(f.paxCount),budget:Number(f.budget),days:Number(f.days)});
+    onSave({...lead,...f,paxCount:Number(f.paxCount),budget:Number(f.budget||0),quoteSentValue:Number(f.quoteSentValue||0),days:Number(f.days)});
   };
 
   return (
@@ -469,8 +471,9 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},team=TEAM,leadA
         <Inp label="Trip Date" value={f.tripDate} onChange={s("tripDate")} type="date"/>
         <Inp label="No. of Days" value={f.days} onChange={s("days")} type="number" placeholder="e.g. 5"/>
         <Inp label="No. of Pax" value={f.paxCount} onChange={s("paxCount")} type="number"/>
-        <Inp label="Package Type" value={f.packageType} onChange={s("packageType")} options={PACKAGE_TYPES}/>
-        <Inp label="Budget (₹)" value={f.budget} onChange={s("budget")} type="number" placeholder="e.g. 45000" fullWidth/>
+        <Inp label="Package Type" value={f.packageType} onChange={s("packageType")} placeholder="e.g. Family, honeymoon, premium, custom" fullWidth/>
+        <Inp label="Budget (₹)" value={f.budget} onChange={s("budget")} type="number" placeholder="e.g. 45000"/>
+        <Inp label="Quote Sent Value (₹)" value={f.quoteSentValue} onChange={s("quoteSentValue")} type="number" placeholder="e.g. 65000"/>
       </div>
       <Inp label="Message from Enquiry" value={f.message} onChange={s("message")} type="textarea" placeholder="What the client wrote in their enquiry form..."/>
 
@@ -925,6 +928,7 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
               {field("Landing Page / Campaign",lead.landingPage)}
               {field("Package Type",lead.packageType)}
               {field("Budget",lead.budget?money(lead.budget):"")}
+              {field("Quote Sent Value",lead.quoteSentValue?money(lead.quoteSentValue):"")}
               {field("Message from Enquiry",lead.message,true)}
               {field("Special Requests",lead.specialRequests,true)}
               {field("Internal Notes",lead.notes,true)}
@@ -1033,10 +1037,10 @@ function KanbanView({leads,onSelectLead}:any) {
 function KanbanCompactView({leads,onSelectLead}:any) {
   return (
     <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:16,alignItems:"flex-start"}}>
-      {LEAD_STATUSES.map(status=>{
+      {KANBAN_STATUSES.map(status=>{
         const columnLeads=leads.filter((lead:any)=>lead.status===status);
         const meta=STATUS_META[status];
-        const value=columnLeads.reduce((sum:number,lead:any)=>sum+Number(lead.budget||0),0);
+        const value=columnLeads.reduce((sum:number,lead:any)=>sum+Number(lead.quoteSentValue||lead.budget||0),0);
         return (
           <div key={status} style={{minWidth:218,maxWidth:238,flexShrink:0,opacity:status==="Lost"?0.75:1}}>
             <div style={{background:meta.col,border:`1.5px solid ${meta.bg}`,borderRadius:"10px 10px 0 0",padding:"10px 12px"}}>
@@ -1060,7 +1064,7 @@ function KanbanCompactView({leads,onSelectLead}:any) {
                       </div>
                       {agent&&<div title={agent.name} style={{width:24,height:24,borderRadius:999,border:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:T.muted,background:"#fff",flexShrink:0}}>{agent.initials}</div>}
                     </div>
-                    <div style={{fontSize:12,fontWeight:800,color:T.teal,marginTop:5}}>{money(lead.budget||0)}</div>
+                    <div style={{fontSize:12,fontWeight:800,color:T.teal,marginTop:5}}>{money(lead.quoteSentValue||lead.budget||0)}</div>
                   </div>
                 );
               })}
@@ -1206,7 +1210,7 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
       {/* Status overview */}
       <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:"16px 20px",marginBottom:16}}>
         <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:14}}>Status Overview</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:8}}>
           {byStatus.map(({status,count,val})=>{
             const m=STATUS_META[status];
             return (
@@ -1367,6 +1371,7 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
     lost:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Lost").length,
     overdue:leads.filter((l:any)=>l.assignedTo===id&&l.isOverdue).length,
     revenue:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget||0),0),
+    pipeline:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Interested").reduce((s:number,l:any)=>s+Number(l.quoteSentValue||0),0),
     sources:LEAD_SOURCES.map(src=>({src,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.source===src).length})).filter(x=>x.cnt>0),
     statuses:LEAD_STATUSES.map(status=>({status,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.status===status).length})).filter(x=>x.cnt>0),
   }));
@@ -1375,7 +1380,7 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
   return (
     <div>
       <div style={{display:"grid",gridTemplateColumns:"1fr",gap:14,marginBottom:16}}>
-        {byAgent.map(({agent,total,active,booked,lost,overdue,revenue,sources,statuses}:any)=>(
+        {byAgent.map(({agent,total,active,booked,lost,revenue,pipeline,sources,statuses}:any)=>(
           <div key={agent.id} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"18px 20px"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:14}}>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -1391,15 +1396,19 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
             </div>
             <div style={{display:"grid",gridTemplateColumns:"minmax(420px,1.1fr) minmax(360px,1fr)",gap:14,alignItems:"start"}}>
               <div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:10}}>
-                  {[["Active",active,T.teal],["Booked",booked,"#15803d"],["Lost",lost,"#b91c1c"],["Overdue",overdue,"#f97316"]].map(([label,value,color])=>(
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+                  {[["Active",active,T.teal],["Booked",booked,"#15803d"],["Cancelled",lost,"#b91c1c"]].map(([label,value,color])=>(
                     <div key={String(label)} style={{background:T.faint,borderRadius:8,padding:"9px 10px"}}>
                       <div style={{fontSize:11,color:T.muted,fontWeight:700,marginBottom:4}}>{label}</div>
                       <div style={{fontSize:18,fontWeight:800,color:String(color),fontFamily:"'Segoe UI',sans-serif"}}>{value}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr",gap:8}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  <div style={{background:T.tealPale,border:`1px solid ${T.border}`,borderRadius:8,padding:"10px 12px"}}>
+                    <div style={{fontSize:11,color:T.teal,fontWeight:800,marginBottom:4}}>Pipeline</div>
+                    <div style={{fontSize:16,fontWeight:800,color:T.teal,fontFamily:"'Segoe UI',sans-serif"}}>{money(pipeline)}</div>
+                  </div>
                   <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,padding:"10px 12px"}}>
                     <div style={{fontSize:11,color:"#15803d",fontWeight:800,marginBottom:4}}>Revenue</div>
                     <div style={{fontSize:16,fontWeight:800,color:"#15803d",fontFamily:"'Segoe UI',sans-serif"}}>{money(revenue)}</div>
@@ -1823,6 +1832,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
       landingPage:l.landingPage,destination:l.landingPage,
       packageType:"",tripDate:l.tripDate,days:l.days,
       paxCount:l.paxCount,budget:0,
+      quoteSentValue:0,
       message:l.message,gclid:l.gclid,
       createdAt:new Date().toISOString(),lastContact:"",nextFollowUp:"",
       daysInPipeline:0,isOverdue:false,tags:[],
@@ -1837,18 +1847,27 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
   if(leads.length===0) return <EmptyState onAdd={()=>onSelectLead("new")} onImport={()=>setGmail(true)}/>;
   const totalLeads=leads.length;
   const bookedLeads=leads.filter((lead:any)=>lead.status==="Booked").length;
+  const pipelineValue=leads.filter((lead:any)=>lead.status==="Interested").reduce((sum:number,lead:any)=>sum+Number(lead.quoteSentValue||0),0);
   const revenueValue=leads.filter((lead:any)=>lead.status==="Booked").reduce((sum:number,lead:any)=>sum+Number(lead.budget||0),0);
   const viewOverdue=leads.filter((lead:any)=>lead.isOverdue).length;
+  const statCards=view==="kanban"
+    ? [
+        ["Total Leads",totalLeads,T.navy],
+        ["Booked",bookedLeads,"#15803d"],
+        ["Pipeline",money(pipelineValue),T.teal],
+        ["Revenue",money(revenueValue),"#7c3aed"],
+      ]
+    : [
+        ["Total Leads",totalLeads,T.navy],
+        ["Booked",bookedLeads,"#15803d"],
+        ["Revenue",money(revenueValue),"#7c3aed"],
+        ["Overdue",viewOverdue,"#b91c1c"],
+      ];
 
   return (
     <div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(150px,1fr))",gap:10,marginBottom:14}}>
-        {[
-          ["Total Leads",totalLeads,T.navy],
-          ["Booked",bookedLeads,"#15803d"],
-          ["Revenue",money(revenueValue),"#7c3aed"],
-          ["Overdue",viewOverdue,"#b91c1c"],
-        ].map(([label,value,color])=>(
+        {statCards.map(([label,value,color])=>(
           <div key={String(label)} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
             <div style={{fontSize:20,fontWeight:900,color:String(color),fontFamily:"'Segoe UI',sans-serif",lineHeight:1.1}}>{value}</div>
             <div style={{fontSize:11,color:T.muted,marginTop:5}}>{label}</div>
@@ -2098,6 +2117,7 @@ export default function ReifyCRM() {
     days:Number(l.days||0),
     paxCount:Number(l.paxCount||1),
     budget:Number(l.budget||0),
+    quoteSentValue:Number(l.quoteSentValue||0),
       message:l.message||"",
       gclid:l.gclid||"",
       gmailMessageId:l.gmailMessageId||"",
