@@ -44,6 +44,9 @@ const STATUS_META: Record<string,any> = {
   "Booked":       {bg:"#dcfce7",text:"#15803d",dot:"#22c55e",col:"#f0fdf4"},
   "Lost":         {bg:"#fee2e2",text:"#b91c1c",dot:"#ef4444",col:"#fff5f5"},
 };
+function statusLabel(status:string) {
+  return status==="Lost"?"Cancelled by Me":status;
+}
 const SOURCE_COLORS: Record<string,any> = {
   "Ads-Email":   {bg:"#dbeafe",text:"#1e40af"},
   "Ads-WhatsApp":{bg:"#dcfce7",text:"#15803d"},
@@ -292,7 +295,7 @@ function Avatar({initials,color,size=32}:any) {
 }
 function StatusBadge({status}:any) {
   const c=STATUS_META[status]||STATUS_META["New"];
-  return <span style={{background:c.bg,color:c.text,fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:20,display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:6,height:6,borderRadius:"50%",background:c.dot,display:"inline-block"}}/>{status}</span>;
+  return <span style={{background:c.bg,color:c.text,fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:20,display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:6,height:6,borderRadius:"50%",background:c.dot,display:"inline-block"}}/>{statusLabel(status)}</span>;
 }
 function SourceBadge({source}:any) {
   const c=SOURCE_COLORS[source]||{bg:"#f1f5f9",text:"#475569"};
@@ -320,7 +323,7 @@ function Inp({label,value,onChange,type="text",options,required,placeholder,full
   return (
     <div style={{marginBottom:14,gridColumn:fullWidth?"1/-1":undefined}}>
       {label&&<label style={{display:"block",fontSize:12,fontWeight:600,color:T.muted,marginBottom:5}}>{label}{required&&<span style={{color:"#ef4444"}}>*</span>}</label>}
-      {options?<select value={value} onChange={e=>onChange(e.target.value)} style={base}><option value="">Select...</option>{options.map((o:string)=><option key={o} value={o}>{o}</option>)}</select>
+      {options?<select value={value} onChange={e=>onChange(e.target.value)} style={base}><option value="">Select...</option>{options.map((o:string)=><option key={o} value={o}>{statusLabel(o)}</option>)}</select>
       :type==="textarea"?<textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={3} style={{...base,resize:"vertical"}}/>
       :<input type={type} value={value} onChange={(e:any)=>onChange(e.target.value)} placeholder={placeholder} style={base}/>}
       {hint&&<div style={{fontSize:11,color:T.muted,marginTop:4}}>{hint}</div>}
@@ -989,7 +992,7 @@ function KanbanView({leads,onSelectLead}:any) {
           <div key={status} style={{minWidth:210,maxWidth:230,flexShrink:0,opacity:status==="Lost"?0.7:1}}>
             <div style={{background:m.col,border:`1.5px solid ${m.bg}`,borderRadius:"12px 12px 0 0",padding:"10px 14px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontWeight:700,fontSize:13,color:m.text}}>{status}</span>
+                <span style={{fontWeight:700,fontSize:13,color:m.text}}>{statusLabel(status)}</span>
                 <span style={{background:m.bg,color:m.text,fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{col.length}</span>
               </div>
               {val>0&&<div style={{fontSize:11,color:m.text,opacity:0.65,marginTop:3}}>₹{(val/1000).toFixed(0)}K</div>}
@@ -1169,7 +1172,7 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
               <div key={status} style={{padding:"12px 10px",borderRadius:10,background:m.col,border:`1px solid ${m.bg}`,textAlign:"center"}}>
                 <div style={{width:8,height:8,borderRadius:"50%",background:m.dot,margin:"0 auto 6px"}}/>
                 <div style={{fontSize:22,fontWeight:800,color:m.text,fontFamily:"Georgia,serif",lineHeight:1}}>{count}</div>
-                <div style={{fontSize:10,fontWeight:700,color:m.text,marginTop:4,opacity:0.8}}>{status}</div>
+                <div style={{fontSize:10,fontWeight:700,color:m.text,marginTop:4,opacity:0.8}}>{statusLabel(status)}</div>
                 {val>0&&<div style={{fontSize:10,color:m.text,opacity:0.5,marginTop:3}}>₹{(val/1000).toFixed(0)}K</div>}
               </div>
             );
@@ -1271,7 +1274,7 @@ function TeamPage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentIds=DEFAULT_
                   const m=STATUS_META[s];
                   return <div key={s} style={{flex:cnt,minWidth:28,padding:"6px 4px",background:m.col,borderRadius:6,textAlign:"center",border:`1px solid ${m.bg}`}}>
                     <div style={{fontSize:13,fontWeight:800,color:m.text}}>{cnt}</div>
-                    <div style={{fontSize:9,color:m.text,opacity:0.7,marginTop:1}}>{s.split(" ")[0]}</div>
+                    <div style={{fontSize:9,color:m.text,opacity:0.7,marginTop:1}}>{statusLabel(s).split(" ")[0]}</div>
                   </div>;
                 })}
               </div>
@@ -1372,7 +1375,7 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
                   {statuses.map(({status,cnt}:any)=>{
                     const meta=STATUS_META[status];
                     return <div key={status} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,padding:"7px 9px",background:meta.col,borderRadius:8,border:`1px solid ${meta.bg}`}}>
-                      <span style={{fontSize:12,color:T.navy,fontWeight:700,whiteSpace:"nowrap"}}>{status}</span>
+                      <span style={{fontSize:12,color:T.navy,fontWeight:700,whiteSpace:"nowrap"}}>{statusLabel(status)}</span>
                       <span style={{fontSize:13,color:meta.text,fontWeight:900}}>{cnt}</span>
                     </div>;
                   })}
@@ -1803,7 +1806,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
           <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"#94a3b8"}}>🔍</span>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name, phone, destination…" style={{...ss,width:"100%",paddingLeft:32,boxSizing:"border-box"}}/>
         </div>
-        <select value={statusF} onChange={e=>setStatusF(e.target.value)} style={ss}><option value="All">All Statuses</option>{LEAD_STATUSES.map(s=><option key={s}>{s}</option>)}</select>
+        <select value={statusF} onChange={e=>setStatusF(e.target.value)} style={ss}><option value="All">All Statuses</option>{LEAD_STATUSES.map(s=><option key={s} value={s}>{statusLabel(s)}</option>)}</select>
         <select value={sourceF} onChange={e=>setSourceF(e.target.value)} style={ss}><option value="All">All Sources</option>{LEAD_SOURCES.map(s=><option key={s}>{s}</option>)}</select>
         {currentUser==="owner"&&<select value={agentF} onChange={e=>setAgentF(e.target.value)} style={ss}><option value="All">All Agents</option>{leadAgentIds.map((id:string)=><option key={id} value={id}>{team[id]?.name || id}</option>)}</select>}
         <div style={{display:"flex",border:`1.5px solid ${T.border}`,borderRadius:8,overflow:"hidden"}}>
@@ -2082,6 +2085,8 @@ export default function ReifyCRM() {
     return ()=>{cancelled=true; window.clearInterval(timer);};
   },[autoSync,activeLeadTaker,leaveData,leadAgentIds]);
 
+  const activeVisible=visible.filter((l:any)=>l.status!=="Lost");
+  const cancelledVisible=visible.filter((l:any)=>l.status==="Lost");
   const overdueCount=visible.filter((l:any)=>l.isOverdue).length;
   const pendingCount=leads.flatMap((l:any)=>l.reminders.filter((r:any)=>!r.isCompleted)).length;
 
@@ -2091,7 +2096,8 @@ export default function ReifyCRM() {
     {id:"team",     icon:"👥",label:"Team",        roles:["owner"],          badge:0},
     {id:"settings", icon:"⚙",label:"Team Settings",roles:["owner"],          badge:0},
     {id:"allleads", icon:"📋",label:"All Leads",   roles:["owner"],          badge:leads.length},
-    {id:"leads",    icon:"👤",label:"My Leads",    roles:leadAgentIds, badge:visible.length},
+    {id:"leads",    icon:"👤",label:"My All Leads",roles:leadAgentIds, badge:activeVisible.length},
+    {id:"cancelled",icon:"X", label:"Cancelled by Me",roles:leadAgentIds, badge:cancelledVisible.length},
     {id:"overdue",  icon:"⚠️",label:"Overdue",     roles:["owner",...leadAgentIds],badge:overdueCount},
   ].filter(n=>n.roles.includes(user));
 
@@ -2207,7 +2213,8 @@ export default function ReifyCRM() {
               {tab==="team"&&"Team Performance"}
               {tab==="settings"&&"Team Settings"}
               {tab==="allleads"&&"All Leads"}
-              {tab==="leads"&&"My Leads"}
+              {tab==="leads"&&"My All Leads"}
+              {tab==="cancelled"&&"Cancelled by Me"}
               {tab==="overdue"&&"Overdue Follow-ups"}
             </h1>
             <p style={{margin:"4px 0 0",fontSize:13,color:T.muted}}>{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})} · {team[user].name}</p>
@@ -2219,7 +2226,9 @@ export default function ReifyCRM() {
         {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked}/>}
         {tab==="team"     &&<TeamPerformancePage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
-        {(tab==="allleads"||tab==="leads")&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="allleads"&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="leads"&&<LeadsTable leads={activeVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="cancelled"&&<LeadsTable leads={cancelledVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="overdue"  &&<LeadsTable leads={visible.filter((l:any)=>l.isOverdue)} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
       </main>
 
