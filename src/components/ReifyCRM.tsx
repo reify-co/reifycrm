@@ -1163,9 +1163,8 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
   const total  =leads.length;
   const booked =leads.filter((l:any)=>l.status==="Booked").length;
   const overdue=leads.filter((l:any)=>l.isOverdue).length;
-  const pipeVal=leads.filter((l:any)=>!["Booked","Lost"].includes(l.status)).reduce((s:number,l:any)=>s+Number(l.budget),0);
-  const revenue=leads.filter((l:any)=>l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget),0);
-  const byStatus=LEAD_STATUSES.map(s=>({status:s,count:leads.filter((l:any)=>l.status===s).length,val:leads.filter((l:any)=>l.status===s).reduce((a:number,l:any)=>a+Number(l.budget),0)}));
+  const revenue=leads.filter((l:any)=>l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget||0),0);
+  const byStatus=LEAD_STATUSES.map(s=>({status:s,count:leads.filter((l:any)=>l.status===s).length,val:leads.filter((l:any)=>l.status===s).reduce((a:number,l:any)=>a+Number(l.budget||0),0)}));
   const handovers=leads.filter((l:any)=>l.handover);
 
   // Today's follow-ups
@@ -1175,15 +1174,12 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
   const kpis=[
     {label:"Total Leads",value:total,           color:T.navy},
     {label:"Booked",     value:booked,           color:"#15803d"},
-    {label:"Pipeline",   value:money(pipeVal),color:T.teal},
     {label:"Revenue",    value:money(revenue),color:"#7c3aed"},
     {label:"Overdue",    value:overdue,           color:"#b91c1c"},
   ];
 
   return (
     <div>
-      <RotationBanner leads={leads} leaveData={leaveData} onLeaveChange={onLeaveChange} currentUser={currentUser} activeLeadTaker={activeLeadTaker} onTakeLeads={onTakeLeads} onStopTakingLeads={onStopTakingLeads} onPassLeadTaker={onPassLeadTaker} team={team} leadAgentIds={leadAgentIds}/>
-
       {handovers.length>0&&(
         <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:"12px 16px",marginBottom:16}}>
           <div style={{fontSize:13,fontWeight:800,color:"#78350f",marginBottom:8}}>Pending Handovers</div>
@@ -1198,7 +1194,7 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
       )}
 
       {/* KPIs */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
         {kpis.map(k=>(
           <div key={k.label} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:"14px 16px"}}>
             <div style={{fontSize:26,fontWeight:800,color:k.color,fontFamily:"Georgia,serif",lineHeight:1}}>{k.value}</div>
@@ -1207,9 +1203,9 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
         ))}
       </div>
 
-      {/* Pipeline — single row */}
+      {/* Status overview */}
       <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:"16px 20px",marginBottom:16}}>
-        <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:14}}>Pipeline Overview</div>
+        <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:14}}>Status Overview</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8}}>
           {byStatus.map(({status,count,val})=>{
             const m=STATUS_META[status];
@@ -1224,6 +1220,8 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
           })}
         </div>
       </div>
+
+      <RotationBanner leads={leads} leaveData={leaveData} onLeaveChange={onLeaveChange} currentUser={currentUser} activeLeadTaker={activeLeadTaker} onTakeLeads={onTakeLeads} onStopTakingLeads={onStopTakingLeads} onPassLeadTaker={onPassLeadTaker} team={team} leadAgentIds={leadAgentIds}/>
 
       {/* Today's Follow-ups */}
       <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:"16px 20px"}}>
@@ -1265,7 +1263,6 @@ function TeamPage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentIds=DEFAULT_
     lost:   leads.filter((l:any)=>l.assignedTo===id&&l.status==="Lost").length,
     overdue:leads.filter((l:any)=>l.assignedTo===id&&l.isOverdue).length,
     revenue:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget),0),
-    pipeline:leads.filter((l:any)=>l.assignedTo===id&&!["Booked","Lost"].includes(l.status)).reduce((s:number,l:any)=>s+Number(l.budget),0),
     sources:LEAD_SOURCES.map(src=>({src,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.source===src).length})).filter(x=>x.cnt>0),
     statuses:LEAD_STATUSES.map(s=>({s,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.status===s).length})),
   }));
@@ -1369,8 +1366,7 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
     booked:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").length,
     lost:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Lost").length,
     overdue:leads.filter((l:any)=>l.assignedTo===id&&l.isOverdue).length,
-    revenue:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget),0),
-    pipeline:leads.filter((l:any)=>l.assignedTo===id&&!["Booked","Lost"].includes(l.status)).reduce((s:number,l:any)=>s+Number(l.budget),0),
+    revenue:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget||0),0),
     sources:LEAD_SOURCES.map(src=>({src,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.source===src).length})).filter(x=>x.cnt>0),
     statuses:LEAD_STATUSES.map(status=>({status,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.status===status).length})).filter(x=>x.cnt>0),
   }));
@@ -1379,7 +1375,7 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
   return (
     <div>
       <div style={{display:"grid",gridTemplateColumns:"1fr",gap:14,marginBottom:16}}>
-        {byAgent.map(({agent,total,active,booked,lost,overdue,revenue,pipeline,sources,statuses}:any)=>(
+        {byAgent.map(({agent,total,active,booked,lost,overdue,revenue,sources,statuses}:any)=>(
           <div key={agent.id} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"18px 20px"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:14}}>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -1403,14 +1399,10 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
                     </div>
                   ))}
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr",gap:8}}>
                   <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,padding:"10px 12px"}}>
                     <div style={{fontSize:11,color:"#15803d",fontWeight:800,marginBottom:4}}>Revenue</div>
                     <div style={{fontSize:16,fontWeight:800,color:"#15803d",fontFamily:"'Segoe UI',sans-serif"}}>{money(revenue)}</div>
-                  </div>
-                  <div style={{background:T.tealPale,border:`1px solid ${T.border}`,borderRadius:8,padding:"10px 12px"}}>
-                    <div style={{fontSize:11,color:T.teal,fontWeight:800,marginBottom:4}}>Pipeline</div>
-                    <div style={{fontSize:16,fontWeight:800,color:T.teal,fontFamily:"'Segoe UI',sans-serif"}}>{money(pipeline)}</div>
                   </div>
                 </div>
               </div>
@@ -1845,17 +1837,15 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
   if(leads.length===0) return <EmptyState onAdd={()=>onSelectLead("new")} onImport={()=>setGmail(true)}/>;
   const totalLeads=leads.length;
   const bookedLeads=leads.filter((lead:any)=>lead.status==="Booked").length;
-  const pipelineValue=leads.filter((lead:any)=>!["Booked","Lost"].includes(lead.status)).reduce((sum:number,lead:any)=>sum+Number(lead.budget||0),0);
   const revenueValue=leads.filter((lead:any)=>lead.status==="Booked").reduce((sum:number,lead:any)=>sum+Number(lead.budget||0),0);
   const viewOverdue=leads.filter((lead:any)=>lead.isOverdue).length;
 
   return (
     <div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(150px,1fr))",gap:10,marginBottom:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(150px,1fr))",gap:10,marginBottom:14}}>
         {[
           ["Total Leads",totalLeads,T.navy],
           ["Booked",bookedLeads,"#15803d"],
-          ["Pipeline",money(pipelineValue),T.teal],
           ["Revenue",money(revenueValue),"#7c3aed"],
           ["Overdue",viewOverdue,"#b91c1c"],
         ].map(([label,value,color])=>(
@@ -2151,7 +2141,6 @@ export default function ReifyCRM() {
 
   const activeVisible=visible.filter((l:any)=>l.status!=="Lost");
   const cancelledVisible=visible.filter((l:any)=>l.status==="Lost");
-  const overdueCount=visible.filter((l:any)=>l.isOverdue).length;
   const pendingCount=leads.flatMap((l:any)=>l.reminders.filter((r:any)=>!r.isCompleted)).length;
 
   const nav=[
@@ -2162,7 +2151,6 @@ export default function ReifyCRM() {
     {id:"allleads", icon:"📋",label:"All Leads",   roles:["owner"],          badge:leads.length},
     {id:"leads",    icon:"👤",label:"My All Leads",roles:leadAgentIds, badge:activeVisible.length},
     {id:"cancelled",icon:"X", label:"Cancelled by Me",roles:leadAgentIds, badge:cancelledVisible.length},
-    {id:"overdue",  icon:"⚠️",label:"Overdue",     roles:["owner",...leadAgentIds],badge:overdueCount},
   ].filter(n=>n.roles.includes(user));
 
   if(!authReady) {
@@ -2279,7 +2267,6 @@ export default function ReifyCRM() {
               {tab==="allleads"&&"All Leads"}
               {tab==="leads"&&"My All Leads"}
               {tab==="cancelled"&&"Cancelled by Me"}
-              {tab==="overdue"&&"Overdue Follow-ups"}
             </h1>
             <p style={{margin:"4px 0 0",fontSize:13,color:T.muted}}>{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})} · {team[user].name}</p>
           </div>
@@ -2293,7 +2280,6 @@ export default function ReifyCRM() {
         {tab==="allleads"&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="leads"&&<LeadsTable leads={activeVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="cancelled"&&<LeadsTable leads={cancelledVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
-        {tab==="overdue"  &&<LeadsTable leads={visible.filter((l:any)=>l.isOverdue)} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
       </main>
 
       {selected&&(
