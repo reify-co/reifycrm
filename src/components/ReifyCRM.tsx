@@ -47,6 +47,9 @@ const STATUS_META: Record<string,any> = {
 function statusLabel(status:string) {
   return status==="Lost"?"Cancelled by Me":status;
 }
+function money(value:any) {
+  return `Rs. ${Number(value||0).toLocaleString("en-IN")}`;
+}
 const SOURCE_COLORS: Record<string,any> = {
   "Ads-Email":   {bg:"#dbeafe",text:"#1e40af"},
   "Ads-WhatsApp":{bg:"#dcfce7",text:"#15803d"},
@@ -921,7 +924,7 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
               {field("Source",lead.source)}
               {field("Landing Page / Campaign",lead.landingPage)}
               {field("Package Type",lead.packageType)}
-              {field("Budget",lead.budget?`Rs ${Number(lead.budget).toLocaleString("en-IN")}`:"")}
+              {field("Budget",lead.budget?money(lead.budget):"")}
               {field("Message from Enquiry",lead.message,true)}
               {field("Special Requests",lead.specialRequests,true)}
               {field("Internal Notes",lead.notes,true)}
@@ -1027,6 +1030,48 @@ function KanbanView({leads,onSelectLead}:any) {
 }
 
 // ─── ROTATION BANNER ──────────────────────────────────────────────────────────
+function KanbanCompactView({leads,onSelectLead}:any) {
+  return (
+    <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:16,alignItems:"flex-start"}}>
+      {LEAD_STATUSES.map(status=>{
+        const columnLeads=leads.filter((lead:any)=>lead.status===status);
+        const meta=STATUS_META[status];
+        const value=columnLeads.reduce((sum:number,lead:any)=>sum+Number(lead.budget||0),0);
+        return (
+          <div key={status} style={{minWidth:218,maxWidth:238,flexShrink:0,opacity:status==="Lost"?0.75:1}}>
+            <div style={{background:meta.col,border:`1.5px solid ${meta.bg}`,borderRadius:"10px 10px 0 0",padding:"10px 12px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+                <span style={{fontWeight:800,fontSize:13,color:meta.text}}>{statusLabel(status)}</span>
+                <span style={{background:meta.bg,color:meta.text,fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:999}}>{columnLeads.length}</span>
+              </div>
+              {value>0&&<div style={{fontSize:11,color:meta.text,opacity:0.7,marginTop:3}}>{money(value)}</div>}
+            </div>
+            <div style={{background:"#f5f9fa",border:`1.5px solid ${meta.bg}`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:"4px 10px",minHeight:82}}>
+              {columnLeads.length===0&&<div style={{textAlign:"center",padding:"20px 0",color:"#94a3b8",fontSize:12}}>Empty</div>}
+              {columnLeads.map((lead:any)=>{
+                const agent=TEAM[lead.assignedTo];
+                return (
+                  <div key={lead.id} onClick={()=>onSelectLead(lead)} style={{padding:"10px 0",borderBottom:`1px solid ${T.border}`,cursor:"pointer"}} onMouseEnter={e=>(e.currentTarget as any).style.background="#fff"} onMouseLeave={e=>(e.currentTarget as any).style.background="transparent"}>
+                    <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start"}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontWeight:800,fontSize:13,color:T.navy,lineHeight:1.3,wordBreak:"break-word"}}>{lead.name}</div>
+                        <div style={{fontSize:11,color:T.muted,marginTop:3}}>{lead.destination||lead.landingPage||"-"}</div>
+                        <div style={{fontSize:11,color:T.muted,marginTop:3}}>{lead.source||"-"}{lead.tags?.[0]?` | ${lead.tags[0]}`:""}{lead.isOverdue?" | Overdue":""}</div>
+                      </div>
+                      {agent&&<div title={agent.name} style={{width:24,height:24,borderRadius:999,border:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:T.muted,background:"#fff",flexShrink:0}}>{agent.initials}</div>}
+                    </div>
+                    <div style={{fontSize:12,fontWeight:800,color:T.teal,marginTop:5}}>{money(lead.budget||0)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function RotationBanner({leads,leaveData,onLeaveChange,currentUser,activeLeadTaker,onTakeLeads,onStopTakingLeads,onPassLeadTaker,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
   const today=new Date();
   const nextAgentId=activeLeadTaker?.agentId || getRotationAgent(today.toISOString(),leaveData,leadAgentIds);
@@ -1130,8 +1175,8 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
   const kpis=[
     {label:"Total Leads",value:total,           color:T.navy},
     {label:"Booked",     value:booked,           color:"#15803d"},
-    {label:"Pipeline",   value:`₹${(pipeVal/1000).toFixed(0)}K`,color:T.teal},
-    {label:"Revenue",    value:`₹${(revenue/1000).toFixed(0)}K`,color:"#7c3aed"},
+    {label:"Pipeline",   value:money(pipeVal),color:T.teal},
+    {label:"Revenue",    value:money(revenue),color:"#7c3aed"},
     {label:"Overdue",    value:overdue,           color:"#b91c1c"},
   ];
 
@@ -1173,7 +1218,7 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
                 <div style={{width:8,height:8,borderRadius:"50%",background:m.dot,margin:"0 auto 6px"}}/>
                 <div style={{fontSize:22,fontWeight:800,color:m.text,fontFamily:"Georgia,serif",lineHeight:1}}>{count}</div>
                 <div style={{fontSize:10,fontWeight:700,color:m.text,marginTop:4,opacity:0.8}}>{statusLabel(status)}</div>
-                {val>0&&<div style={{fontSize:10,color:m.text,opacity:0.5,marginTop:3}}>₹{(val/1000).toFixed(0)}K</div>}
+                {val>0&&<div style={{fontSize:10,color:m.text,opacity:0.5,marginTop:3}}>{money(val)}</div>}
               </div>
             );
           })}
@@ -1798,9 +1843,28 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
   const ss:any={padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:12,color:T.muted,background:T.faint,outline:"none"};
 
   if(leads.length===0) return <EmptyState onAdd={()=>onSelectLead("new")} onImport={()=>setGmail(true)}/>;
+  const totalLeads=leads.length;
+  const bookedLeads=leads.filter((lead:any)=>lead.status==="Booked").length;
+  const pipelineValue=leads.filter((lead:any)=>!["Booked","Lost"].includes(lead.status)).reduce((sum:number,lead:any)=>sum+Number(lead.budget||0),0);
+  const revenueValue=leads.filter((lead:any)=>lead.status==="Booked").reduce((sum:number,lead:any)=>sum+Number(lead.budget||0),0);
+  const viewOverdue=leads.filter((lead:any)=>lead.isOverdue).length;
 
   return (
     <div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(150px,1fr))",gap:10,marginBottom:14}}>
+        {[
+          ["Total Leads",totalLeads,T.navy],
+          ["Booked",bookedLeads,"#15803d"],
+          ["Pipeline",money(pipelineValue),T.teal],
+          ["Revenue",money(revenueValue),"#7c3aed"],
+          ["Overdue",viewOverdue,"#b91c1c"],
+        ].map(([label,value,color])=>(
+          <div key={String(label)} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
+            <div style={{fontSize:20,fontWeight:900,color:String(color),fontFamily:"'Segoe UI',sans-serif",lineHeight:1.1}}>{value}</div>
+            <div style={{fontSize:11,color:T.muted,marginTop:5}}>{label}</div>
+          </div>
+        ))}
+      </div>
       <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
         <div style={{position:"relative",flex:1,minWidth:200}}>
           <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"#94a3b8"}}>🔍</span>
@@ -1819,7 +1883,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
       </div>
 
       {gmail&&<Modal title="Import Leads from Gmail" onClose={()=>setGmail(false)}><GmailImportPanel onImport={importGmail} existingLeads={leads}/></Modal>}
-      {view==="kanban"&&<KanbanView leads={filtered} onSelectLead={onSelectLead}/>}
+      {view==="kanban"&&<KanbanCompactView leads={filtered} onSelectLead={onSelectLead}/>}
 
       {view==="table"&&(
         <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden"}}>
@@ -1867,7 +1931,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
                     <td style={{padding:"12px"}}><TablePill>{formatLeadDate(lead.tripDate)||"—"}</TablePill></td>
                     <td style={{padding:"12px"}}><TablePill>{getLeadEndDate(lead.tripDate,lead.days)||"—"}</TablePill></td>
                     <td style={{padding:"12px",fontSize:12,color:T.muted}}>{state||"—"}</td>
-                    <td style={{padding:"12px"}}><TablePill tone="status">{lead.status||"—"}</TablePill></td>
+                    <td style={{padding:"12px"}}><TablePill tone="status">{lead.status?statusLabel(lead.status):"—"}</TablePill></td>
                     <td style={{padding:"12px"}}>
                       {tag?<span style={{fontSize:10,background:T.tealPale,color:T.navy,padding:"2px 7px",borderRadius:10,whiteSpace:"nowrap",fontWeight:700}}>{tag}</span>:<span style={{fontSize:12,color:"#94a3b8"}}>—</span>}
                     </td>
