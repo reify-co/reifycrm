@@ -1312,6 +1312,99 @@ function TeamPage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentIds=DEFAULT_
 }
 
 // ─── GMAIL IMPORT ─────────────────────────────────────────────────────────────
+function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
+  const money=(value:number)=>`Rs. ${Number(value||0).toLocaleString("en-IN")}`;
+  const byAgent=leadAgentIds.map((id:string)=>({
+    agent:team[id],
+    total:leads.filter((l:any)=>l.assignedTo===id).length,
+    active:leads.filter((l:any)=>l.assignedTo===id&&!["Booked","Lost"].includes(l.status)).length,
+    booked:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").length,
+    lost:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Lost").length,
+    overdue:leads.filter((l:any)=>l.assignedTo===id&&l.isOverdue).length,
+    revenue:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget),0),
+    pipeline:leads.filter((l:any)=>l.assignedTo===id&&!["Booked","Lost"].includes(l.status)).reduce((s:number,l:any)=>s+Number(l.budget),0),
+    sources:LEAD_SOURCES.map(src=>({src,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.source===src).length})).filter(x=>x.cnt>0),
+    statuses:LEAD_STATUSES.map(status=>({status,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.status===status).length})).filter(x=>x.cnt>0),
+  }));
+  const sourceTotal=(src:string)=>leads.filter((l:any)=>l.source===src).length;
+
+  return (
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr",gap:14,marginBottom:16}}>
+        {byAgent.map(({agent,total,active,booked,lost,overdue,revenue,pipeline,sources,statuses}:any)=>(
+          <div key={agent.id} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"18px 20px"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:14}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <Avatar initials={agent.initials} color={agent.color} size={42}/>
+                <div>
+                  <div style={{fontWeight:800,fontSize:17,color:T.navy,fontFamily:"'Segoe UI',sans-serif"}}>{agent.name}</div>
+                  <div style={{fontSize:12,color:T.muted,marginTop:2}}>{total} total leads</div>
+                </div>
+              </div>
+              <button onClick={()=>onLeaveChange(agent.id,!leaveData[agent.id])} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${leaveData[agent.id]?"#fca5a5":T.border}`,background:leaveData[agent.id]?"#fee2e2":T.faint,cursor:"pointer",fontSize:12,color:leaveData[agent.id]?"#b91c1c":T.muted,fontWeight:700,fontFamily:"inherit"}}>
+                {leaveData[agent.id]?"On Leave":"Available"}
+              </button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"minmax(420px,1.1fr) minmax(360px,1fr)",gap:14,alignItems:"start"}}>
+              <div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:10}}>
+                  {[["Active",active,T.teal],["Booked",booked,"#15803d"],["Lost",lost,"#b91c1c"],["Overdue",overdue,"#f97316"]].map(([label,value,color])=>(
+                    <div key={String(label)} style={{background:T.faint,borderRadius:8,padding:"9px 10px"}}>
+                      <div style={{fontSize:11,color:T.muted,fontWeight:700,marginBottom:4}}>{label}</div>
+                      <div style={{fontSize:18,fontWeight:800,color:String(color),fontFamily:"'Segoe UI',sans-serif"}}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,padding:"10px 12px"}}>
+                    <div style={{fontSize:11,color:"#15803d",fontWeight:800,marginBottom:4}}>Revenue</div>
+                    <div style={{fontSize:16,fontWeight:800,color:"#15803d",fontFamily:"'Segoe UI',sans-serif"}}>{money(revenue)}</div>
+                  </div>
+                  <div style={{background:T.tealPale,border:`1px solid ${T.border}`,borderRadius:8,padding:"10px 12px"}}>
+                    <div style={{fontSize:11,color:T.teal,fontWeight:800,marginBottom:4}}>Pipeline</div>
+                    <div style={{fontSize:16,fontWeight:800,color:T.teal,fontFamily:"'Segoe UI',sans-serif"}}>{money(pipeline)}</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:11,fontWeight:800,color:T.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>By Stage</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(120px,1fr))",gap:6,marginBottom:12}}>
+                  {statuses.map(({status,cnt}:any)=>{
+                    const meta=STATUS_META[status];
+                    return <div key={status} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,padding:"7px 9px",background:meta.col,borderRadius:8,border:`1px solid ${meta.bg}`}}>
+                      <span style={{fontSize:12,color:T.navy,fontWeight:700,whiteSpace:"nowrap"}}>{status}</span>
+                      <span style={{fontSize:13,color:meta.text,fontWeight:900}}>{cnt}</span>
+                    </div>;
+                  })}
+                </div>
+                <div style={{fontSize:11,fontWeight:800,color:T.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>Lead Sources</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {sources.length?sources.map(({src,cnt}:any)=>(
+                    <span key={src} style={{fontSize:12,fontWeight:700,padding:"5px 10px",borderRadius:8,background:SOURCE_COLORS[src]?.bg,color:T.navy,border:`1px solid ${T.border}`}}>{src}: {cnt}</span>
+                  )):<span style={{fontSize:12,color:T.muted}}>No leads yet</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"16px 20px"}}>
+        <div style={{fontSize:11,fontWeight:800,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:14}}>Overall Lead Sources</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(130px,1fr))",gap:8}}>
+          {LEAD_SOURCES.map(src=>{
+            const cnt=sourceTotal(src);
+            const color=SOURCE_COLORS[src];
+            return <div key={src} style={{padding:"11px 12px",borderRadius:8,background:color.bg,border:`1px solid ${T.border}`}}>
+              <div style={{fontSize:12,fontWeight:800,color:T.navy,marginBottom:4}}>{src}</div>
+              <div style={{fontSize:18,fontWeight:900,color:color.text,fontFamily:"'Segoe UI',sans-serif"}}>{cnt}</div>
+            </div>;
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TeamSettingsPage({team,setTeam,leadAgentIds,setLeadAgentIds}:any) {
   const [form,setForm]=useState({name:"",initials:"",color:"#1a7a8a"});
   const leadAgents=leadAgentIds.map((id:string)=>team[id]).filter(Boolean);
@@ -2124,7 +2217,7 @@ export default function ReifyCRM() {
 
         {tab==="dashboard"&&<OwnerDashboard leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} onSelectLead={selectLead} currentUser={user} activeLeadTaker={activeLeadTaker} onTakeLeads={takeLeads} onStopTakingLeads={stopTakingLeads} onPassLeadTaker={passLeadTaker} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked}/>}
-        {tab==="team"     &&<TeamPage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="team"     &&<TeamPerformancePage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
         {(tab==="allleads"||tab==="leads")&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="overdue"  &&<LeadsTable leads={visible.filter((l:any)=>l.isOverdue)} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
