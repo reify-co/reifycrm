@@ -1523,13 +1523,15 @@ function TeamSettingsPage({team,setTeam,leadAgentIds,setLeadAgentIds}:any) {
   );
 }
 
-function LeadInboxPage({onImport,onManualAdd,existingLeads=[],autoSync=false,onAutoSyncToggle,lastChecked=""}:any) {
+function LeadInboxPage({onImport,onManualAdd,existingLeads=[],autoSync=false,onAutoSyncToggle,lastChecked="",currentUser="owner",team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS,activeLeadTaker=null}:any) {
   const [tab,setTab]=useState<"email"|"screenshot"|"manual">("email");
   const [screenshotData,setScreenshotData]=useState<any>(null);
   const [screenshotPreview,setScreenshotPreview]=useState("");
   const [screenshotFile,setScreenshotFile]=useState<File|null>(null);
   const [extracting,setExtracting]=useState(false);
   const [ocrText,setOcrText]=useState("");
+  const defaultAssignTo=leadAgentIds.includes(currentUser)?currentUser:(activeLeadTaker?.agentId || leadAgentIds[0] || "");
+  const [assignTo,setAssignTo]=useState(defaultAssignTo);
   const [manual,setManual]=useState({name:"",phone:"",email:"",source:"WhatsApp",landingPage:"",paxCount:2,tripDate:"",days:"",message:""});
   function loadScreenshotFile(file:File) {
     if(!file.type.startsWith("image/")) return alert("Please paste or upload an image file.");
@@ -1564,9 +1566,18 @@ function LeadInboxPage({onImport,onManualAdd,existingLeads=[],autoSync=false,onA
   }
   function addManualLead() {
     if(!manual.name || !manual.phone) return alert("Name and phone are required.");
-    onManualAdd({...manual,paxCount:Number(manual.paxCount||1),days:Number(manual.days||0)});
+    onManualAdd({...manual,assignedTo:assignTo,paxCount:Number(manual.paxCount||1),days:Number(manual.days||0)});
     setManual({name:"",phone:"",email:"",source:"WhatsApp",landingPage:"",paxCount:2,tripDate:"",days:"",message:""});
   }
+  const assignmentControl=(
+    <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14,flexWrap:"wrap",padding:"10px 12px",background:T.faint,border:`1px solid ${T.border}`,borderRadius:10}}>
+      <label style={{fontSize:12,fontWeight:800,color:T.navy}}>Assign saved leads to</label>
+      <select value={assignTo} onChange={e=>setAssignTo(e.target.value)} style={{padding:"8px 10px",borderRadius:8,border:`1.5px solid ${T.border}`,background:"#fff",color:T.navy,fontSize:13,fontWeight:700}}>
+        {leadAgentIds.map((id:string)=><option key={id} value={id}>{team[id]?.name || id}</option>)}
+      </select>
+      <span style={{fontSize:12,color:T.muted}}>Team can choose this before importing old leads.</span>
+    </div>
+  );
   const tabButton=(id:any,label:string)=>(
     <button onClick={()=>setTab(id)} style={{padding:"9px 14px",border:"none",borderBottom:`2px solid ${tab===id?T.teal:"transparent"}`,background:"transparent",fontSize:13,fontWeight:tab===id?800:600,color:tab===id?T.teal:T.muted,cursor:"pointer"}}>
       {label}
@@ -1586,7 +1597,8 @@ function LeadInboxPage({onImport,onManualAdd,existingLeads=[],autoSync=false,onA
               <div style={{fontSize:13,color:T.muted,lineHeight:1.6,marginBottom:14}}>
                 For now this safely simulates Gmail import. When hosted, this section will read/copy enquiry emails from Gmail without stopping your email flow.
               </div>
-              <GmailImportPanel onImport={onImport} existingLeads={existingLeads} autoSync={autoSync} onAutoSyncToggle={onAutoSyncToggle} lastChecked={lastChecked}/>
+              {assignmentControl}
+              <GmailImportPanel onImport={onImport} existingLeads={existingLeads} autoSync={autoSync} onAutoSyncToggle={onAutoSyncToggle} lastChecked={lastChecked} assignTo={assignTo} team={team}/>
             </div>
           )}
           {tab==="screenshot"&&(
@@ -1594,6 +1606,7 @@ function LeadInboxPage({onImport,onManualAdd,existingLeads=[],autoSync=false,onA
               <div style={{fontSize:13,color:T.muted,lineHeight:1.6,marginBottom:14}}>
                 Paste/upload a lead screenshot here. In the online version, OCR/AI will extract the fields; this prototype shows the review step before saving.
               </div>
+              {assignmentControl}
               <div onPaste={handleScreenshotPaste} tabIndex={0} style={{border:`1.5px dashed ${T.border}`,borderRadius:12,padding:"22px",textAlign:"center",background:T.faint,marginBottom:14,outline:"none"}}>
                 <div style={{fontSize:14,fontWeight:800,color:T.navy,marginBottom:6}}>Screenshot capture area</div>
                 <div style={{fontSize:12,color:T.muted,marginBottom:12}}>Click here and press Ctrl+V to paste a screenshot, or upload an image.</div>
@@ -1626,7 +1639,7 @@ function LeadInboxPage({onImport,onManualAdd,existingLeads=[],autoSync=false,onA
                       <Inp key={k} label={k==="gclid"?"GCLID":k==="landingPage"?"Destination":k==="tripDate"?"Trip Date":k} value={screenshotData[k]||""} onChange={(v:any)=>setScreenshotData((p:any)=>({...p,[k]:v}))} fullWidth={k==="gclid"}/>
                     ))}
                   </div>
-                  <Btn onClick={()=>{onImport([screenshotData]);setScreenshotData(null);setScreenshotPreview("");}}>Add Screenshot Lead</Btn>
+                  <Btn onClick={()=>{onImport([{...screenshotData,assignedTo:assignTo}]);setScreenshotData(null);setScreenshotPreview("");}}>Add Screenshot Lead</Btn>
                 </div>
               )}
             </div>
@@ -1634,6 +1647,7 @@ function LeadInboxPage({onImport,onManualAdd,existingLeads=[],autoSync=false,onA
           {tab==="manual"&&(
             <div>
               <div style={{fontSize:13,color:T.muted,lineHeight:1.6,marginBottom:14}}>Use this for WhatsApp, phone call, and reference leads.</div>
+              {assignmentControl}
               <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"0 14px"}}>
                 <Inp label="Name" value={manual.name} onChange={(v:string)=>setManual(p=>({...p,name:v}))} required/>
                 <Inp label="Phone" value={manual.phone} onChange={(v:string)=>setManual(p=>({...p,phone:v}))} required/>
@@ -1654,7 +1668,7 @@ function LeadInboxPage({onImport,onManualAdd,existingLeads=[],autoSync=false,onA
   );
 }
 
-function GmailImportPanel({onImport,existingLeads=[],autoSync=false,onAutoSyncToggle=()=>{},lastChecked=""}:any) {
+function GmailImportPanel({onImport,existingLeads=[],autoSync=false,onAutoSyncToggle=()=>{},lastChecked="",assignTo="",team=TEAM}:any) {
   const [status,setStatus]=useState<"idle"|"searching"|"done"|"error">("idle");
   const [found,setFound]=useState<any[]>([]);
   const [sel,setSel]=useState(new Set<string>());
@@ -1693,10 +1707,10 @@ function GmailImportPanel({onImport,existingLeads=[],autoSync=false,onAutoSyncTo
 
   const toggle=(id:string)=>setSel(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n;});
   function importSelected() {
-    const selected=found.filter(l=>sel.has(l.id));
+    const selected=found.filter(l=>sel.has(l.id)).map(l=>({...l,assignedTo:assignTo}));
     if(selected.length===0) return;
     onImport(selected);
-    setImportedMsg(`Imported ${selected.length} lead${selected.length!==1?"s":""}.`);
+    setImportedMsg(`Imported ${selected.length} lead${selected.length!==1?"s":""} to ${team[assignTo]?.name || assignTo}.`);
     setFound(prev=>prev.filter(l=>!sel.has(l.id)));
     setSel(new Set());
   }
@@ -2109,7 +2123,7 @@ export default function ReifyCRM() {
     email:l.email||"",
     source:l.source||"Ads-Email",
     status:"New",
-    assignedTo:activeLeadTaker?.agentId || (leadAgentIds.includes(user)?user:getRotationAgent(new Date().toISOString(),leaveData,leadAgentIds)),
+    assignedTo:l.assignedTo || activeLeadTaker?.agentId || (leadAgentIds.includes(user)?user:getRotationAgent(new Date().toISOString(),leaveData,leadAgentIds)),
     landingPage:l.landingPage||l.destination||"",
     destination:l.destination||l.landingPage||"",
     packageType:l.packageType||"",
@@ -2294,7 +2308,7 @@ export default function ReifyCRM() {
         </div>
 
         {tab==="dashboard"&&<OwnerDashboard leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} onSelectLead={selectLead} currentUser={user} activeLeadTaker={activeLeadTaker} onTakeLeads={takeLeads} onStopTakingLeads={stopTakingLeads} onPassLeadTaker={passLeadTaker} team={team} leadAgentIds={leadAgentIds}/>}
-        {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked}/>}
+        {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked} currentUser={user} team={team} leadAgentIds={leadAgentIds} activeLeadTaker={activeLeadTaker}/>}
         {tab==="team"     &&<TeamPerformancePage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
         {tab==="allleads"&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
