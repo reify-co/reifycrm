@@ -1,0 +1,2693 @@
+[
+  {
+    "id": "hotel-aalo-reyi-homestay",
+    "location": "Aalo",
+    "name": "Reyi Homestay",
+    "brief": "Traditional homestay",
+    "rating": "Homestay",
+    "imageFilename": "Reyi Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-anini-mishmi-hill-resort",
+    "location": "Anini",
+    "name": "Mishmi Hill Resort",
+    "brief": "Mountain retreat resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Mishmi Hill Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-aritar-eco-log-hut-resort-aritar",
+    "location": "Aritar",
+    "name": "Eco Log Hut Resort Aritar",
+    "brief": "Rustic eco resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Eco Log Hut Resort Aritar.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-bhalukpong-prashanti-cottage",
+    "location": "Bhalukpong",
+    "name": "Prashanti Cottage",
+    "brief": "Comfortable riverside stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Prashanti Cottage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-bhalukpong-mandal-ghang",
+    "location": "Bhalukpong",
+    "name": "Mandal Ghang",
+    "brief": "Traditional local homestay",
+    "rating": "Homestay",
+    "imageFilename": "Mandal Ghang.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-bhalukpong-waii-international-hotel",
+    "location": "Bhalukpong",
+    "name": "Waii International Hotel",
+    "brief": "Modern city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Waii International Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-bomdila-dhe-dhen-gaykhil-guest-house",
+    "location": "Bomdila",
+    "name": "Dhe Dhen Gaykhil Guest House",
+    "brief": "Cozy hillside guesthouse",
+    "rating": "Budget Stay",
+    "imageFilename": "Dhe Dhen Gaykhil Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-bomdila-tara-yana-homestay",
+    "location": "Bomdila",
+    "name": "Tara Yana Homestay",
+    "brief": "Traditional family homestay",
+    "rating": "Homestay",
+    "imageFilename": "Tara Yana Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-bomdila-hotel-the-grand",
+    "location": "Bomdila",
+    "name": "Hotel The Grand",
+    "brief": "Modern city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel The Grand.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-bomdila-zhidey-homestay",
+    "location": "Bomdila",
+    "name": "Zhidey Homestay",
+    "brief": "Comfortable local homestay",
+    "rating": "Homestay",
+    "imageFilename": "Zhidey Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-bomdila-buddha-guest-house",
+    "location": "Bomdila",
+    "name": "Buddha Guest House",
+    "brief": "Peaceful guesthouse retreat",
+    "rating": "Budget Stay",
+    "imageFilename": "Buddha Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-bomdila-tsepal-yangzom",
+    "location": "Bomdila",
+    "name": "Tsepal Yangzom",
+    "brief": "Boutique hillside stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Tsepal Yangzom.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-café-cherrapunjee",
+    "location": "Cherrapunjee",
+    "name": "Café Cherrapunjee",
+    "brief": "Café‑style stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Café Cherrapunjee.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-hillscape-guest-house",
+    "location": "Cherrapunjee",
+    "name": "Hillscape Guest House",
+    "brief": "Scenic guesthouse lodging",
+    "rating": "Budget Stay",
+    "imageFilename": "Hillscape Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-phil-s-guest-house",
+    "location": "Cherrapunjee",
+    "name": "Phil's Guest House",
+    "brief": "Cozy guesthouse stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Phil's Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-kutmadan-resort",
+    "location": "Cherrapunjee",
+    "name": "Kutmadan Resort",
+    "brief": "Scenic hillside resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Kutmadan Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-jiva-resort",
+    "location": "Cherrapunjee",
+    "name": "Jiva Resort",
+    "brief": "Modern nature resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Jiva Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-sulawado-resort",
+    "location": "Cherrapunjee",
+    "name": "Sulawado Resort",
+    "brief": "Tranquil resort retreat",
+    "rating": "3 Star Resort",
+    "imageFilename": "Sulawado Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-the-rustic-cottage---homestay",
+    "location": "Cherrapunjee",
+    "name": "The Rustic Cottage - Homestay",
+    "brief": "Rustic homestay experience",
+    "rating": "Homestay",
+    "imageFilename": "The Rustic Cottage - Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-stay-awhile-guest-house",
+    "location": "Cherrapunjee",
+    "name": "Stay Awhile Guest House",
+    "brief": "Simple guesthouse lodging",
+    "rating": "Budget Stay",
+    "imageFilename": "Stay Awhile Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-sai-mika-resort",
+    "location": "Cherrapunjee",
+    "name": "Sai Mika Resort",
+    "brief": "Popular family resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Sai Mika Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-la-kupar-inn",
+    "location": "Cherrapunjee",
+    "name": "La Kupar Inn",
+    "brief": "Boutique inn stay",
+    "rating": "Budget Stay",
+    "imageFilename": "La Kupar Inn.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-breiancy-holiday-inn",
+    "location": "Cherrapunjee",
+    "name": "Breiancy Holiday Inn",
+    "brief": "Comfortable holiday inn",
+    "rating": "Budget Stay",
+    "imageFilename": "Breiancy Holiday Inn.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-polo-cherrapunjee-resort",
+    "location": "Cherrapunjee",
+    "name": "Polo Cherrapunjee Resort",
+    "brief": "Premium resort stay",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Polo Cherrapunjee Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-royal-view-resort",
+    "location": "Cherrapunjee",
+    "name": "Royal View Resort",
+    "brief": "Scenic view resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Royal View Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-pyrnkyn-s-inn",
+    "location": "Cherrapunjee",
+    "name": "Pyrnkyn's Inn",
+    "brief": "Quaint rustic inn",
+    "rating": "Budget Stay",
+    "imageFilename": "Pyrnkyn's Inn.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-ri-sohra-resort",
+    "location": "Cherrapunjee",
+    "name": "Ri Sohra Resort",
+    "brief": "Nature‑focused resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Ri Sohra Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-vista-by-lakupar",
+    "location": "Cherrapunjee",
+    "name": "Vista By Lakupar",
+    "brief": "Scenic boutique resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Vista By Lakupar.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-the-vintage-inn---the-vintage-grand",
+    "location": "Cherrapunjee",
+    "name": "The Vintage Inn & The Vintage Grand",
+    "brief": "Heritage‑style lodging",
+    "rating": "3 Star Hotel",
+    "imageFilename": "The Vintage Inn & The Vintage Grand.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-sohra-plaza",
+    "location": "Cherrapunjee",
+    "name": "Sohra Plaza",
+    "brief": "Central city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Sohra Plaza.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-smoky-falls-mae-fi-resort",
+    "location": "Cherrapunjee",
+    "name": "Smoky Falls Mae Fi Resort",
+    "brief": "Waterfall‑view resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Smoky Falls Mae Fi Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-serene-resort",
+    "location": "Cherrapunjee",
+    "name": "Serene Resort",
+    "brief": "Peaceful nature resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Serene Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-san-naela-resort",
+    "location": "Cherrapunjee",
+    "name": "San Naela Resort",
+    "brief": "Modern hillside resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "San Naela Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-rose-mary-guest-house",
+    "location": "Cherrapunjee",
+    "name": "Rose Mary Guest House",
+    "brief": "Homely guesthouse stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Rose Mary Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-mid-town-inn",
+    "location": "Cherrapunjee",
+    "name": "Mid Town Inn",
+    "brief": "Central budget inn",
+    "rating": "Budget Stay",
+    "imageFilename": "Mid Town Inn.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-mawseintyllang-eco-tourist-resort",
+    "location": "Cherrapunjee",
+    "name": "Mawseintyllang Eco Tourist Resort",
+    "brief": "Eco‑friendly resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Mawseintyllang Eco Tourist Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-ha-la-iing-homestay",
+    "location": "Cherrapunjee",
+    "name": "Ha La Iing Homestay",
+    "brief": "Traditional homestay",
+    "rating": "Homestay",
+    "imageFilename": "Ha La Iing Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-cascade-homestay",
+    "location": "Cherrapunjee",
+    "name": "Cascade Homestay",
+    "brief": "Waterfall‑side homestay",
+    "rating": "Homestay",
+    "imageFilename": "Cascade Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-regal-retreat",
+    "location": "Cherrapunjee",
+    "name": "Regal Retreat",
+    "brief": "Elegant boutique retreat",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Regal Retreat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-cherrapunjee-holiday-resort",
+    "location": "Cherrapunjee",
+    "name": "Cherrapunjee Holiday Resort",
+    "brief": "Popular holiday resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Cherrapunjee Holiday Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-cherrapunjee-100-waterfalls-camp",
+    "location": "Cherrapunjee",
+    "name": "100 Waterfalls Camp",
+    "brief": "Adventure nature camp",
+    "rating": "Budget Stay",
+    "imageFilename": "100 Waterfalls Camp.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-hotel-zambala-retreat-and-spa",
+    "location": "Darjeeling",
+    "name": "Hotel Zambala Retreat and Spa",
+    "brief": "Scenic spa retreat",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Hotel Zambala Retreat and Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-sumi-yashshree",
+    "location": "Darjeeling",
+    "name": "Sumi Yashshree",
+    "brief": "Comfortable city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Sumi Yashshree.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-summit-swiss-heritage-resort---spa",
+    "location": "Darjeeling",
+    "name": "Summit Swiss Heritage Resort & Spa",
+    "brief": "Heritage spa resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Summit Swiss Heritage Resort & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-wonder-woods-boutique-hotel",
+    "location": "Darjeeling",
+    "name": "Wonder Woods Boutique Hotel",
+    "brief": "Boutique hillside stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Wonder Woods Boutique Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-sumitel-darjeeling",
+    "location": "Darjeeling",
+    "name": "Sumitel Darjeeling",
+    "brief": "Modern city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Sumitel Darjeeling.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-hotel-silver-star",
+    "location": "Darjeeling",
+    "name": "Hotel Silver Star",
+    "brief": "Central budget hotel",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Silver Star.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-cherrywood-suites---spa",
+    "location": "Darjeeling",
+    "name": "Cherrywood Suites & Spa",
+    "brief": "Upscale spa lodging",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Cherrywood Suites & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-sumi-vista-tv-tower",
+    "location": "Darjeeling",
+    "name": "Sumi Vista TV Tower",
+    "brief": "Contemporary boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Sumi Vista TV Tower.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-udaan-nirvana-resort",
+    "location": "Darjeeling",
+    "name": "Udaan Nirvana Resort",
+    "brief": "Scenic boutique resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Udaan Nirvana Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-udaan-himalayan-suites---spa",
+    "location": "Darjeeling",
+    "name": "Udaan Himalayan Suites & Spa",
+    "brief": "Elegant spa retreat",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Udaan Himalayan Suites & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-udaan-dekeling-resort",
+    "location": "Darjeeling",
+    "name": "Udaan Dekeling Resort",
+    "brief": "Cozy hillside resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Udaan Dekeling Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-sinclairs-darjeeling",
+    "location": "Darjeeling",
+    "name": "Sinclairs Darjeeling",
+    "brief": "Premium city hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Sinclairs Darjeeling.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-sterling-darjeeling",
+    "location": "Darjeeling",
+    "name": "Sterling Darjeeling",
+    "brief": "Global resort brand",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Sterling Darjeeling.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-tripoo-potala-palace",
+    "location": "Darjeeling",
+    "name": "Tripoo Potala Palace",
+    "brief": "Heritage‑style hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Tripoo Potala Palace.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-the-elgin--heritage-resort---spa",
+    "location": "Darjeeling",
+    "name": "The Elgin, Heritage Resort & Spa",
+    "brief": "Historic luxury resort",
+    "rating": "Premium Hotel",
+    "imageFilename": "The Elgin, Heritage Resort & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-ging-tea-house",
+    "location": "Darjeeling",
+    "name": "Ging Tea House",
+    "brief": "Boutique tea estate stay",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Ging Tea House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-glenburn-tea-estate",
+    "location": "Darjeeling",
+    "name": "Glenburn Tea Estate",
+    "brief": "Luxury tea estate retreat",
+    "rating": "Premium Hotel",
+    "imageFilename": "Glenburn Tea Estate.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-hotel-raj-ville",
+    "location": "Darjeeling",
+    "name": "Hotel Raj Ville",
+    "brief": "Comfortable city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Raj Ville.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-salatrees-boutique-hotel",
+    "location": "Darjeeling",
+    "name": "Salatrees Boutique Hotel",
+    "brief": "Stylish boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Salatrees Boutique Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-darjeeling-hotel-sherpa",
+    "location": "Darjeeling",
+    "name": "Hotel Sherpa",
+    "brief": "Cozy hillside hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Sherpa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dawki-riverlet-camp",
+    "location": "Dawki",
+    "name": "Riverlet Camp",
+    "brief": "Riverside adventure camp",
+    "rating": "Budget Stay",
+    "imageFilename": "Riverlet Camp.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dibrugarh-homestay-by-the-tea-garden",
+    "location": "Dibrugarh",
+    "name": "Homestay by the Tea Garden",
+    "brief": "Tea estate homestay",
+    "rating": "Homestay",
+    "imageFilename": "Homestay by the Tea Garden.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-rigsel-dirang",
+    "location": "Dirang",
+    "name": "Rigsel Dirang",
+    "brief": "Cozy hillside stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Rigsel Dirang.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-dirang-boutique-cottage",
+    "location": "Dirang",
+    "name": "Dirang Boutique Cottage",
+    "brief": "Boutique mountain cottage",
+    "rating": "Budget Stay",
+    "imageFilename": "Dirang Boutique Cottage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-letro-homestay",
+    "location": "Dirang",
+    "name": "Letro Homestay",
+    "brief": "Traditional homestay",
+    "rating": "Homestay",
+    "imageFilename": "Letro Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-pemaling-lord-inn-dirang",
+    "location": "Dirang",
+    "name": "Pemaling Lord Inn Dirang",
+    "brief": "Comfortable local hotel",
+    "rating": "Budget Stay",
+    "imageFilename": "Pemaling Lord Inn Dirang.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-hotel-the-mandala",
+    "location": "Dirang",
+    "name": "Hotel The Mandala",
+    "brief": "Stylish boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel The Mandala.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-awoo-resort",
+    "location": "Dirang",
+    "name": "Awoo Resort",
+    "brief": "Scenic nature resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Awoo Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-ta-dzong-homestay",
+    "location": "Dirang",
+    "name": "Ta Dzong Homestay",
+    "brief": "Heritage homestay retreat",
+    "rating": "Homestay",
+    "imageFilename": "Ta Dzong Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-brokpa-estate-homestay",
+    "location": "Dirang",
+    "name": "Brokpa Estate Homestay",
+    "brief": "Rustic estate homestay",
+    "rating": "Homestay",
+    "imageFilename": "Brokpa Estate Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-mudita-hotel",
+    "location": "Dirang",
+    "name": "Mudita Hotel",
+    "brief": "Modern city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Mudita Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-wangdi-s-residency",
+    "location": "Dirang",
+    "name": "Wangdi's Residency",
+    "brief": "Comfortable budget stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Wangdi's Residency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-wangyal-homestay",
+    "location": "Dirang",
+    "name": "Wangyal Homestay",
+    "brief": "Cozy family homestay",
+    "rating": "Homestay",
+    "imageFilename": "Wangyal Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-four-season-homestay",
+    "location": "Dirang",
+    "name": "Four Season Homestay",
+    "brief": "Seasonal homestay retreat",
+    "rating": "Homestay",
+    "imageFilename": "Four Season Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-dirang-sangti-river-front-homestay",
+    "location": "Dirang",
+    "name": "Sangti River Front Homestay",
+    "brief": "Riverside homestay lodging",
+    "rating": "Homestay",
+    "imageFilename": "Sangti River Front Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-udaan-woodberry-hotel---spa",
+    "location": "Gangtok",
+    "name": "Udaan Woodberry Hotel & Spa",
+    "brief": "Elegant spa hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Udaan Woodberry Hotel & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-alpine-resort-gangtok",
+    "location": "Gangtok",
+    "name": "Alpine Resort Gangtok",
+    "brief": "Scenic hillside resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Alpine Resort Gangtok.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-biksthang-boutique-hotel",
+    "location": "Gangtok",
+    "name": "Biksthang Boutique Hotel",
+    "brief": "Boutique mountain retreat",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Biksthang Boutique Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-blueberry-hotel---banquet",
+    "location": "Gangtok",
+    "name": "Blueberry Hotel & Banquet",
+    "brief": "Modern banquet hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Blueberry Hotel & Banquet.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-cilantro-unwind-delisso-abode",
+    "location": "Gangtok",
+    "name": "Cilantro Unwind Delisso Abode",
+    "brief": "Stylish boutique stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Cilantro Unwind Delisso Abode.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-denzong-regency",
+    "location": "Gangtok",
+    "name": "Denzong Regency",
+    "brief": "Premium heritage hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Denzong Regency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-gangtok-resort",
+    "location": "Gangtok",
+    "name": "Gangtok Resort",
+    "brief": "Comfortable city resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Gangtok Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-ginger-gangtok",
+    "location": "Gangtok",
+    "name": "Ginger Gangtok",
+    "brief": "Contemporary budget hotel",
+    "rating": "Budget Stay",
+    "imageFilename": "Ginger Gangtok.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-golden-crescent-resort---spa--gangtok",
+    "location": "Gangtok",
+    "name": "Golden Crescent Resort & Spa, Gangtok",
+    "brief": "Upscale spa resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Golden Crescent Resort & Spa, Gangtok.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-hotel-aurora-gangtok",
+    "location": "Gangtok",
+    "name": "Hotel Aurora Gangtok",
+    "brief": "Cozy city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Aurora Gangtok.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-hotel-kaso",
+    "location": "Gangtok",
+    "name": "Hotel Kaso",
+    "brief": "Simple budget stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Kaso.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-kunden-village-resort-and-spa",
+    "location": "Gangtok",
+    "name": "Kunden Village Resort and Spa",
+    "brief": "Village spa retreat",
+    "rating": "3 Star Resort",
+    "imageFilename": "Kunden Village Resort and Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-la-manila-kanishka",
+    "location": "Gangtok",
+    "name": "La Manila Kanishka",
+    "brief": "Boutique hillside hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "La Manila Kanishka.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-lemon-tree-hotel--gangtok",
+    "location": "Gangtok",
+    "name": "Lemon Tree Hotel, Gangtok",
+    "brief": "Modern business hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Lemon Tree Hotel, Gangtok.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-magpie-libing-grand-hotel-and-resort",
+    "location": "Gangtok",
+    "name": "Magpie Libing Grand Hotel and Resort",
+    "brief": "Scenic grand resort",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Magpie Libing Grand Hotel and Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-malinggo-homestay",
+    "location": "Gangtok",
+    "name": "Malinggo Homestay",
+    "brief": "Traditional homestay",
+    "rating": "Homestay",
+    "imageFilename": "Malinggo Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-mayfair-spa-resort---casino--gangtok",
+    "location": "Gangtok",
+    "name": "Mayfair Spa Resort & Casino, Gangtok",
+    "brief": "Luxury spa & casino",
+    "rating": "Premium Hotel",
+    "imageFilename": "Mayfair Spa Resort & Casino, Gangtok.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-pearl-retreat---pure-veg",
+    "location": "Gangtok",
+    "name": "Pearl Retreat - Pure Veg",
+    "brief": "Vegetarian boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Pearl Retreat - Pure Veg.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-rufina-pinasa-residency",
+    "location": "Gangtok",
+    "name": "Rufina Pinasa Residency",
+    "brief": "Comfortable budget stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Rufina Pinasa Residency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-the-nettle-and-fern-hotel",
+    "location": "Gangtok",
+    "name": "The Nettle and Fern Hotel",
+    "brief": "Stylish boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "The Nettle and Fern Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-summit-namnang-courtyard---spa",
+    "location": "Gangtok",
+    "name": "Summit Namnang Courtyard & Spa",
+    "brief": "Elegant spa retreat",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Summit Namnang Courtyard & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-summit-norling-resort---spa",
+    "location": "Gangtok",
+    "name": "Summit Norling Resort & Spa",
+    "brief": "Scenic spa resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Summit Norling Resort & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-tashiling-residency-hotel---spa",
+    "location": "Gangtok",
+    "name": "Tashiling Residency Hotel & Spa",
+    "brief": "Upscale spa hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Tashiling Residency Hotel & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-the-elgin-nor-khill---heritage-resort---spa",
+    "location": "Gangtok",
+    "name": "The Elgin Nor-Khill - Heritage Resort & Spa",
+    "brief": "Historic luxury resort",
+    "rating": "Premium Hotel",
+    "imageFilename": "The Elgin Nor-Khill - Heritage Resort & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-the-fern-denzong-hotel---spa",
+    "location": "Gangtok",
+    "name": "The Fern Denzong Hotel & Spa",
+    "brief": "Contemporary spa hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "The Fern Denzong Hotel & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-the-narayani-continental-hotel",
+    "location": "Gangtok",
+    "name": "The Narayani Continental Hotel",
+    "brief": "Central city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "The Narayani Continental Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-vantage-cardamom-residency",
+    "location": "Gangtok",
+    "name": "Vantage Cardamom Residency",
+    "brief": "Cozy hillside stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Vantage Cardamom Residency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-voyage-songfum-retreat",
+    "location": "Gangtok",
+    "name": "Voyage Songfum Retreat",
+    "brief": "Scenic retreat lodge",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Voyage Songfum Retreat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-gangtok-yashshree-kanishka-gangtok",
+    "location": "Gangtok",
+    "name": "Yashshree Kanishka Gangtok",
+    "brief": "Modern boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Yashshree Kanishka Gangtok.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-the-kalyaniz",
+    "location": "Guwahati",
+    "name": "The Kalyaniz",
+    "brief": "Modern business stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "The Kalyaniz.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-pemaling-lords-eco-inn",
+    "location": "Guwahati",
+    "name": "Pemaling Lords Eco Inn",
+    "brief": "Eco‑friendly comfort hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Pemaling Lords Eco Inn.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-hotel-rajmahal",
+    "location": "Guwahati",
+    "name": "Hotel Rajmahal",
+    "brief": "Central elegant lodging",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Rajmahal.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-the-guwahati-address",
+    "location": "Guwahati",
+    "name": "The Guwahati Address",
+    "brief": "Premium city hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "The Guwahati Address.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-kiranshree-grand",
+    "location": "Guwahati",
+    "name": "Kiranshree Grand",
+    "brief": "Contemporary luxury stay",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Kiranshree Grand.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-the-park-riviera",
+    "location": "Guwahati",
+    "name": "The Park Riviera",
+    "brief": "Riverside boutique hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "The Park Riviera.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-hotel-mayflower",
+    "location": "Guwahati",
+    "name": "Hotel Mayflower",
+    "brief": "Classic heritage lodging",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Mayflower.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-brahmaputra-jungle-resort",
+    "location": "Guwahati",
+    "name": "Brahmaputra Jungle Resort",
+    "brief": "Nature retreat resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Brahmaputra Jungle Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-vivanta-guwahati",
+    "location": "Guwahati",
+    "name": "Vivanta Guwahati",
+    "brief": "Luxury five‑star stay",
+    "rating": "Premium Hotel",
+    "imageFilename": "Vivanta Guwahati.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-guwahati-radisson-blu-hotel--guwahati",
+    "location": "Guwahati",
+    "name": "Radisson Blu Hotel, Guwahati",
+    "brief": "International upscale hotel",
+    "rating": "Premium Hotel",
+    "imageFilename": "Radisson Blu Hotel, Guwahati.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-jowai-the-loomkyntoor-resort",
+    "location": "Jowai",
+    "name": "The Loomkyntoor Resort",
+    "brief": "Scenic boutique resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "The Loomkyntoor Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-jowai-sah-i-nam-resort",
+    "location": "Jowai",
+    "name": "Sah I Nam Resort",
+    "brief": "Elegant hillside resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Sah I Nam Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kalimpong-the-elgin-silver-oaks",
+    "location": "Kalimpong",
+    "name": "The Elgin Silver Oaks",
+    "brief": "Heritage luxury resort",
+    "rating": "Premium Hotel",
+    "imageFilename": "The Elgin Silver Oaks.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kalimpong-summit-barsana-resort---spa",
+    "location": "Kalimpong",
+    "name": "Summit Barsana Resort & Spa",
+    "brief": "Elegant spa retreat",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Summit Barsana Resort & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kalimpong-hotel-garden-reach",
+    "location": "Kalimpong",
+    "name": "Hotel Garden Reach",
+    "brief": "Comfortable hillside hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Garden Reach.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kalimpong-hotel-kalimpong-park",
+    "location": "Kalimpong",
+    "name": "Hotel Kalimpong Park",
+    "brief": "Central city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Kalimpong Park.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kalimpong-hotel-monarch",
+    "location": "Kalimpong",
+    "name": "Hotel Monarch",
+    "brief": "Modern boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Monarch.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-wildernest",
+    "location": "Kaziranga",
+    "name": "Wildernest",
+    "brief": "Jungle lodge retreat",
+    "rating": "3 Star Resort",
+    "imageFilename": "Wildernest.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-borgos-the-wild-haven",
+    "location": "Kaziranga",
+    "name": "Borgos The Wild Haven",
+    "brief": "Premium wildlife resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Borgos The Wild Haven.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-the-garnet",
+    "location": "Kaziranga",
+    "name": "The Garnet",
+    "brief": "Boutique nature stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "The Garnet.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-infinity-resort",
+    "location": "Kaziranga",
+    "name": "Infinity Resort",
+    "brief": "Upscale safari resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Infinity Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-bagori-lodge",
+    "location": "Kaziranga",
+    "name": "Bagori Lodge",
+    "brief": "Comfortable safari lodge",
+    "rating": "3 Star Resort",
+    "imageFilename": "Bagori Lodge.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-iora-the-retreat",
+    "location": "Kaziranga",
+    "name": "Iora The Retreat",
+    "brief": "Popular wildlife resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Iora The Retreat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-foxtail-orchid",
+    "location": "Kaziranga",
+    "name": "Foxtail Orchid",
+    "brief": "Scenic boutique lodge",
+    "rating": "3 Star Resort",
+    "imageFilename": "Foxtail Orchid.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-wildgrass-lodge",
+    "location": "Kaziranga",
+    "name": "Wildgrass Lodge",
+    "brief": "Rustic jungle lodge",
+    "rating": "3 Star Resort",
+    "imageFilename": "Wildgrass Lodge.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-airavat-hotel",
+    "location": "Kaziranga",
+    "name": "Airavat Hotel",
+    "brief": "Modern city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Airavat Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-nature-hunt-eco-camp",
+    "location": "Kaziranga",
+    "name": "Nature Hunt Eco Camp",
+    "brief": "Eco‑friendly camp stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Nature Hunt Eco Camp.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-bonhabi-resort",
+    "location": "Kaziranga",
+    "name": "Bonhabi Resort",
+    "brief": "Cozy jungle resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Bonhabi Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-dhanshree-resort",
+    "location": "Kaziranga",
+    "name": "Dhanshree Resort",
+    "brief": "Family‑friendly resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Dhanshree Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-hongthor-resort",
+    "location": "Kaziranga",
+    "name": "Hongthor Resort",
+    "brief": "Nature resort retreat",
+    "rating": "3 Star Resort",
+    "imageFilename": "Hongthor Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-kaziranga-eco-camp",
+    "location": "Kaziranga",
+    "name": "Kaziranga Eco Camp",
+    "brief": "Adventure eco camp",
+    "rating": "Budget Stay",
+    "imageFilename": "Kaziranga Eco Camp.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-la-vue-resort",
+    "location": "Kaziranga",
+    "name": "La Vue Resort",
+    "brief": "Scenic view resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "La Vue Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-hotel-shivaji-inn-kaziranga",
+    "location": "Kaziranga",
+    "name": "Hotel Shivaji Inn Kaziranga",
+    "brief": "Budget city inn",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Shivaji Inn Kaziranga.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-summit-green-village-resort---spa",
+    "location": "Kaziranga",
+    "name": "Summit Green Village Resort & Spa",
+    "brief": "Luxury spa resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Summit Green Village Resort & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-the-kaziranga-address",
+    "location": "Kaziranga",
+    "name": "The Kaziranga Address",
+    "brief": "Premium wildlife hotel",
+    "rating": "Premium Hotel",
+    "imageFilename": "The Kaziranga Address.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-vaani-greens-kaziranga-wildlife-resort",
+    "location": "Kaziranga",
+    "name": "Vaani Greens Kaziranga Wildlife Resort",
+    "brief": "Green nature resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Vaani Greens Kaziranga Wildlife Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-royale-de-casa-resort",
+    "location": "Kaziranga",
+    "name": "Royale de Casa Resort",
+    "brief": "Elegant premium resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Royale de Casa Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-niltava-by-iora-kaziranga",
+    "location": "Kaziranga",
+    "name": "Niltava by Iora Kaziranga",
+    "brief": "Boutique nature retreat",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Niltava by Iora Kaziranga.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-habitas-rhino-by-nature-hunt",
+    "location": "Kaziranga",
+    "name": "Habitas Rhino by Nature Hunt",
+    "brief": "Rhino‑themed eco lodge",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Habitas Rhino by Nature Hunt.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-red-river-retreat",
+    "location": "Kaziranga",
+    "name": "Red River Retreat",
+    "brief": "Riverside boutique resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Red River Retreat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kaziranga-mandu--the-escape-resort",
+    "location": "Kaziranga",
+    "name": "Mandu, The Escape Resort",
+    "brief": "Scenic escape resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Mandu, The Escape Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kohima-hotel-japfü",
+    "location": "Kohima",
+    "name": "Hotel Japfü",
+    "brief": "Central city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Japfü.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kohima-akim-homestay",
+    "location": "Kohima",
+    "name": "AKIM Homestay",
+    "brief": "Traditional homestay",
+    "rating": "Homestay",
+    "imageFilename": "AKIM Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-kohima-niraamaya-retreats-aradura",
+    "location": "Kohima",
+    "name": "Niraamaya Retreats Aradura",
+    "brief": "Luxury hillside retreat",
+    "rating": "Premium Hotel",
+    "imageFilename": "Niraamaya Retreats Aradura.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-summit-panghen-metok",
+    "location": "Lachen",
+    "name": "Summit Panghen Metok",
+    "brief": "Scenic mountain resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Summit Panghen Metok.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-rufina-lachen-deezong",
+    "location": "Lachen",
+    "name": "Rufina Lachen Deezong",
+    "brief": "Comfortable boutique stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Rufina Lachen Deezong.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-magellan-s-the-grand--lachen",
+    "location": "Lachen",
+    "name": "Magellan’s The Grand, Lachen",
+    "brief": "Premium hillside hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Magellan’s The Grand, Lachen.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-highlanders-retreat",
+    "location": "Lachen",
+    "name": "Highlanders Retreat",
+    "brief": "Rustic mountain retreat",
+    "rating": "Budget Stay",
+    "imageFilename": "Highlanders Retreat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-yashshree-lachen",
+    "location": "Lachen",
+    "name": "Yashshree Lachen",
+    "brief": "Modern boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Yashshree Lachen.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-apple-orchard-resort",
+    "location": "Lachen",
+    "name": "Apple Orchard Resort",
+    "brief": "Orchard‑view resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Apple Orchard Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-khenkhim-regency",
+    "location": "Lachen",
+    "name": "Khenkhim Regency",
+    "brief": "Elegant hillside hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Khenkhim Regency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-taktsang-residency",
+    "location": "Lachen",
+    "name": "Taktsang Residency",
+    "brief": "Comfortable city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Taktsang Residency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-yashshree-lachung",
+    "location": "Lachung",
+    "name": "Yashshree Lachung",
+    "brief": "Modern boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Yashshree Lachung.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-rufina-lachung-deezong",
+    "location": "Lachung",
+    "name": "Rufina Lachung Deezong",
+    "brief": "Comfortable hillside stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Rufina Lachung Deezong.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-summit-alpine-abode-hotel",
+    "location": "Lachung",
+    "name": "Summit Alpine Abode Hotel",
+    "brief": "Cozy mountain hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Summit Alpine Abode Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-magpie-valley-view",
+    "location": "Lachung",
+    "name": "Magpie Valley View",
+    "brief": "Scenic valley resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Magpie Valley View.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-season-house",
+    "location": "Lachung",
+    "name": "Hotel Season House",
+    "brief": "Comfortable city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Season House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-tenzin---restaurant",
+    "location": "Lachung",
+    "name": "Hotel Tenzin & Restaurant",
+    "brief": "Central budget hotel",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Tenzin & Restaurant.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-snow-retreat",
+    "location": "Lachung",
+    "name": "Hotel Snow Retreat",
+    "brief": "Rustic mountain retreat",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Snow Retreat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-royal-lachung",
+    "location": "Lachung",
+    "name": "Hotel Royal Lachung",
+    "brief": "Elegant boutique stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Royal Lachung.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-golden-valley",
+    "location": "Lachung",
+    "name": "Hotel Golden Valley",
+    "brief": "Scenic valley hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Golden Valley.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-hill-queen",
+    "location": "Lachung",
+    "name": "Hotel Hill Queen",
+    "brief": "Cozy hillside inn",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Hill Queen.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-floret",
+    "location": "Lachung",
+    "name": "Hotel Floret",
+    "brief": "Stylish boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Floret.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-norling-zimkhang",
+    "location": "Lachung",
+    "name": "Hotel Norling Zimkhang",
+    "brief": "Traditional hillside hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Norling Zimkhang.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-hotel-blue-pine",
+    "location": "Lachen",
+    "name": "Hotel Blue Pine",
+    "brief": "Comfortable budget stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Blue Pine.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachen-apple-orchid-resort",
+    "location": "Lachen",
+    "name": "Apple Orchid Resort",
+    "brief": "Orchard‑view boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Apple Orchid Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-lachung-continental",
+    "location": "Lachung",
+    "name": "Hotel Lachung Continental",
+    "brief": "Central city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Lachung Continental.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-deezong",
+    "location": "Lachung",
+    "name": "Hotel Deezong",
+    "brief": "Comfortable boutique stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Deezong.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-lachung-residency",
+    "location": "Lachung",
+    "name": "Hotel Lachung Residency",
+    "brief": "Budget hillside hotel",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Lachung Residency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-snow-peak",
+    "location": "Lachung",
+    "name": "Hotel Snow Peak",
+    "brief": "Scenic mountain retreat",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Snow Peak.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-lachung-heritage",
+    "location": "Lachung",
+    "name": "Hotel Lachung Heritage",
+    "brief": "Heritage‑style boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Lachung Heritage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-lachung-hotel-lachung-view",
+    "location": "Lachung",
+    "name": "Hotel Lachung View",
+    "brief": "Valley‑view boutique stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Lachung View.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-majuli-jyoti-home-bamboo-garden-lodge",
+    "location": "Majuli",
+    "name": "Jyoti Home Bamboo Garden Lodge",
+    "brief": "Riverside bamboo lodge",
+    "rating": "Homestay",
+    "imageFilename": "Jyoti Home Bamboo Garden Lodge.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-majuli-ayang-okum-river-bank-bamboo-cottage",
+    "location": "Majuli",
+    "name": "Ayang Okum River Bank Bamboo Cottage",
+    "brief": "Riverbank bamboo cottage",
+    "rating": "Homestay",
+    "imageFilename": "Ayang Okum River Bank Bamboo Cottage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-manas-national-park-musa-jungle-retreat",
+    "location": "Manas National Park",
+    "name": "Musa Jungle Retreat",
+    "brief": "Jungle safari resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Musa Jungle Retreat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-manas-national-park-florican-cottage",
+    "location": "Manas National Park",
+    "name": "Florican Cottage",
+    "brief": "Rustic jungle cottage",
+    "rating": "Budget Stay",
+    "imageFilename": "Florican Cottage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mawkyngbna-umkhakhoi-cottage",
+    "location": "Mawkyngbna",
+    "name": "Umkhakhoi Cottage",
+    "brief": "Rustic hillside cottage",
+    "rating": "Budget Stay",
+    "imageFilename": "Umkhakhoi Cottage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mawkyngbna-bling-homestay",
+    "location": "Mawkyngbna",
+    "name": "Bling Homestay",
+    "brief": "Cozy family homestay",
+    "rating": "Homestay",
+    "imageFilename": "Bling Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mawkyngbna-ts-cottage",
+    "location": "Mawkyngbna",
+    "name": "TS Cottage",
+    "brief": "Simple village cottage stay",
+    "rating": "Budget Stay",
+    "imageFilename": "TS Cottage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mawlynnong-na-i-mei-homestay",
+    "location": "Mawlynnong",
+    "name": "Na I Mei Homestay",
+    "brief": "Cozy village homestay",
+    "rating": "Homestay",
+    "imageFilename": "Na I Mei Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mawlynnong-shaiti-homestay-cum-viewpoint",
+    "location": "Mawlynnong",
+    "name": "Shaiti Homestay cum Viewpoint",
+    "brief": "Scenic homestay with viewpoint",
+    "rating": "Homestay",
+    "imageFilename": "Shaiti Homestay cum Viewpoint.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mawlynnong-riwar-cottage",
+    "location": "Mawlynnong",
+    "name": "Riwar Cottage",
+    "brief": "Rustic cottage retreat",
+    "rating": "Budget Stay",
+    "imageFilename": "Riwar Cottage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mawlynnong-ka-bri-war-resort",
+    "location": "Mawlynnong",
+    "name": "Ka Bri War Resort",
+    "brief": "Boutique village resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Ka Bri War Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mawlynnong-pa-siang-living-root-guest-house",
+    "location": "Mawlynnong",
+    "name": "Pa‑Siang Living Root Guest House",
+    "brief": "Unique root‑bridge guesthouse",
+    "rating": "Budget Stay",
+    "imageFilename": "Pa‑Siang Living Root Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mawlynnong-deiphi---risa-homestay",
+    "location": "Mawlynnong",
+    "name": "Deiphi & Risa Homestay",
+    "brief": "Traditional family homestay",
+    "rating": "Homestay",
+    "imageFilename": "Deiphi & Risa Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mokokchung-whispering-winds",
+    "location": "Mokokchung",
+    "name": "Whispering Winds",
+    "brief": "Boutique hillside stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Whispering Winds.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mon-helsa-cottage",
+    "location": "Mon",
+    "name": "Helsa Cottage",
+    "brief": "Rustic hillside cottage",
+    "rating": "Budget Stay",
+    "imageFilename": "Helsa Cottage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-mon-helsa-homestay",
+    "location": "Mon",
+    "name": "Helsa Homestay",
+    "brief": "Cozy family homestay",
+    "rating": "Homestay",
+    "imageFilename": "Helsa Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-nameri-lalimou-camp",
+    "location": "Nameri",
+    "name": "Lalimou Camp",
+    "brief": "Riverside eco camp",
+    "rating": "Budget Stay",
+    "imageFilename": "Lalimou Camp.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-nameri-jironi-resort",
+    "location": "Nameri",
+    "name": "Jironi Resort",
+    "brief": "Comfortable nature resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Jironi Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-namsai-golden-pagoda-eco-resort",
+    "location": "Namsai",
+    "name": "Golden Pagoda Eco Resort",
+    "brief": "Cultural eco resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Golden Pagoda Eco Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-the-elgin-mount-pandim",
+    "location": "Pelling",
+    "name": "The Elgin Mount Pandim",
+    "brief": "Heritage luxury resort",
+    "rating": "Premium Hotel",
+    "imageFilename": "The Elgin Mount Pandim.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-norbu-ghang-resort",
+    "location": "Pelling",
+    "name": "Norbu Ghang Resort",
+    "brief": "Scenic hillside resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Norbu Ghang Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-summit-newa-regency",
+    "location": "Pelling",
+    "name": "Summit Newa Regency",
+    "brief": "Elegant boutique hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Summit Newa Regency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-garuda",
+    "location": "Pelling",
+    "name": "Hotel Garuda",
+    "brief": "Cozy budget hotel",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Garuda.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-sonamchen",
+    "location": "Pelling",
+    "name": "Hotel Sonamchen",
+    "brief": "Comfortable city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Sonamchen.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-dubdi",
+    "location": "Pelling",
+    "name": "Hotel Dubdi",
+    "brief": "Rustic hillside inn",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Dubdi.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-phamrong",
+    "location": "Pelling",
+    "name": "Hotel Phamrong",
+    "brief": "Valley‑view boutique stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Phamrong.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-white-hill",
+    "location": "Pelling",
+    "name": "Hotel White Hill",
+    "brief": "Modern boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel White Hill.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-snow-view",
+    "location": "Pelling",
+    "name": "Hotel Snow View",
+    "brief": "Scenic mountain hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Snow View.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-norling",
+    "location": "Pelling",
+    "name": "Hotel Norling",
+    "brief": "Traditional hillside hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Norling.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-apple-valley",
+    "location": "Pelling",
+    "name": "Hotel Apple Valley",
+    "brief": "Orchard‑view boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Apple Valley.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-snow-castle",
+    "location": "Pelling",
+    "name": "Hotel Snow Castle",
+    "brief": "Heritage‑style lodging",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Snow Castle.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-valley-view",
+    "location": "Pelling",
+    "name": "Hotel Valley View",
+    "brief": "Scenic hillside retreat",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Valley View.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-royal-orchid",
+    "location": "Pelling",
+    "name": "Hotel Royal Orchid",
+    "brief": "Orchid‑themed boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Royal Orchid.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-mountain-view",
+    "location": "Pelling",
+    "name": "Hotel Mountain View",
+    "brief": "Scenic mountain hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Mountain View.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-pinewood",
+    "location": "Pelling",
+    "name": "Hotel Pinewood",
+    "brief": "Cozy pinewood lodge",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Pinewood.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-summit-himalayan-heights",
+    "location": "Pelling",
+    "name": "Hotel Summit Himalayan Heights",
+    "brief": "Upscale hillside resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Hotel Summit Himalayan Heights.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-pelling-continental",
+    "location": "Pelling",
+    "name": "Hotel Pelling Continental",
+    "brief": "Central city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Pelling Continental.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-pelling-residency",
+    "location": "Pelling",
+    "name": "Hotel Pelling Residency",
+    "brief": "Budget hillside hotel",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Pelling Residency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-pelling-heritage",
+    "location": "Pelling",
+    "name": "Hotel Pelling Heritage",
+    "brief": "Heritage‑style boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Pelling Heritage.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-pelling-view",
+    "location": "Pelling",
+    "name": "Hotel Pelling View",
+    "brief": "Valley‑view boutique stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Pelling View.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-rabdentse-residency",
+    "location": "Pelling",
+    "name": "Hotel Rabdentse Residency",
+    "brief": "Elegant hillside hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Rabdentse Residency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pelling-hotel-pemayangtse",
+    "location": "Pelling",
+    "name": "Hotel Pemayangtse",
+    "brief": "Historic monastery resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Hotel Pemayangtse.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pobitora-zizina-otis-resort",
+    "location": "Pobitora",
+    "name": "Zizina Otis Resort",
+    "brief": "Wildlife resort retreat",
+    "rating": "3 Star Resort",
+    "imageFilename": "Zizina Otis Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-pobitora-meadowlark",
+    "location": "Pobitora",
+    "name": "Meadowlark",
+    "brief": "Cozy jungle lodge",
+    "rating": "Budget Stay",
+    "imageFilename": "Meadowlark.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-roing-mito-homestay",
+    "location": "Roing",
+    "name": "Mito Homestay",
+    "brief": "Cozy family homestay",
+    "rating": "Homestay",
+    "imageFilename": "Mito Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-roing-ana-homestay",
+    "location": "Roing",
+    "name": "Ana Homestay",
+    "brief": "Comfortable local homestay",
+    "rating": "Homestay",
+    "imageFilename": "Ana Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-roing-achayando",
+    "location": "Roing",
+    "name": "Achayando",
+    "brief": "Rustic hillside lodge",
+    "rating": "Budget Stay",
+    "imageFilename": "Achayando.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-the-golf-retreat",
+    "location": "Shillong",
+    "name": "The Golf Retreat",
+    "brief": "Scenic golfside resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "The Golf Retreat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-woodland-hill-stay",
+    "location": "Shillong",
+    "name": "Woodland Hill Stay",
+    "brief": "Cozy hillside accommodation",
+    "rating": "Budget Stay",
+    "imageFilename": "Woodland Hill Stay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-hotel-nirvana-orchid",
+    "location": "Shillong",
+    "name": "Hotel Nirvana Orchid",
+    "brief": "Elegant boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Nirvana Orchid.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-leikyrpad-orchid-resort",
+    "location": "Shillong",
+    "name": "Leikyrpad Orchid Resort",
+    "brief": "Tranquil orchid retreat",
+    "rating": "3 Star Resort",
+    "imageFilename": "Leikyrpad Orchid Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-iamonlang-resort",
+    "location": "Shillong",
+    "name": "Iamonlang Resort",
+    "brief": "Peaceful nature getaway",
+    "rating": "3 Star Resort",
+    "imageFilename": "Iamonlang Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-eureka-inn---café",
+    "location": "Shillong",
+    "name": "Eureka Inn & Café",
+    "brief": "Charming inn with café",
+    "rating": "Budget Stay",
+    "imageFilename": "Eureka Inn & Café.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-windermere-resort",
+    "location": "Shillong",
+    "name": "Windermere Resort",
+    "brief": "Luxury hillside resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Windermere Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-windermere-hotel---spa",
+    "location": "Shillong",
+    "name": "Windermere Hotel & Spa",
+    "brief": "Upscale spa experience",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Windermere Hotel & Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-the-loft-executive-inn",
+    "location": "Shillong",
+    "name": "The Loft Executive Inn",
+    "brief": "Modern executive lodging",
+    "rating": "3 Star Hotel",
+    "imageFilename": "The Loft Executive Inn.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-polo-towers",
+    "location": "Shillong",
+    "name": "Polo Towers",
+    "brief": "Premier city hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Polo Towers.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-woodstock-farmhouse",
+    "location": "Shillong",
+    "name": "Woodstock Farmhouse",
+    "brief": "Rustic farmhouse charm",
+    "rating": "Budget Stay",
+    "imageFilename": "Woodstock Farmhouse.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-hotel-heiga-vns",
+    "location": "Shillong",
+    "name": "Hotel Heiga VNS",
+    "brief": "Comfortable urban stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Heiga VNS.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-pinehill-homestay",
+    "location": "Shillong",
+    "name": "Pinehill Homestay",
+    "brief": "Homely pinewood retreat",
+    "rating": "Homestay",
+    "imageFilename": "Pinehill Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-aurora-guest-house",
+    "location": "Shillong",
+    "name": "Aurora Guest House",
+    "brief": "Simple guest accommodation",
+    "rating": "Budget Stay",
+    "imageFilename": "Aurora Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-roinam-retreat",
+    "location": "Shillong",
+    "name": "Roinam Retreat",
+    "brief": "Quiet scenic retreat",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Roinam Retreat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-hotel-m-crown",
+    "location": "Shillong",
+    "name": "Hotel M Crown",
+    "brief": "Stylish central hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel M Crown.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-sha-ri-loum-homestay",
+    "location": "Shillong",
+    "name": "Sha-Ri-Loum Homestay",
+    "brief": "Traditional homestay experience",
+    "rating": "Homestay",
+    "imageFilename": "Sha-Ri-Loum Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-rockcliff",
+    "location": "Shillong",
+    "name": "Rockcliff",
+    "brief": "Hilltop boutique stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Rockcliff.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-umiam-house-boat",
+    "location": "Shillong",
+    "name": "Umiam House Boat",
+    "brief": "Floating lake experience",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Umiam House Boat.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-ri-kynjai---serenity-by-the-lake",
+    "location": "Shillong",
+    "name": "Ri Kynjai - Serenity By The Lake",
+    "brief": "Lakeside luxury resort",
+    "rating": "Premium Hotel",
+    "imageFilename": "Ri Kynjai - Serenity By The Lake.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-the-arbour-inn",
+    "location": "Shillong",
+    "name": "The Arbour Inn",
+    "brief": "Elegant hillside inn",
+    "rating": "3 Star Hotel",
+    "imageFilename": "The Arbour Inn.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-hills-abode",
+    "location": "Shillong",
+    "name": "Hills Abode",
+    "brief": "Peaceful hill retreat",
+    "rating": "Budget Stay",
+    "imageFilename": "Hills Abode.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-hoopoe-guest-house",
+    "location": "Shillong",
+    "name": "Hoopoe Guest House",
+    "brief": "Birdwatcher’s cozy stay",
+    "rating": "Budget Stay",
+    "imageFilename": "Hoopoe Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-rapcy-residency",
+    "location": "Shillong",
+    "name": "Rapcy Residency",
+    "brief": "Budget city lodging",
+    "rating": "Budget Stay",
+    "imageFilename": "Rapcy Residency.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-hotel-the-acropolis",
+    "location": "Shillong",
+    "name": "Hotel The Acropolis",
+    "brief": "Modern city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel The Acropolis.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-vivanta-meghalaya--shillong",
+    "location": "Shillong",
+    "name": "Vivanta Meghalaya, Shillong",
+    "brief": "Premium five-star hotel",
+    "rating": "Premium Hotel",
+    "imageFilename": "Vivanta Meghalaya, Shillong.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-the-heritage-club---tripura-castle-hotel-and-spa",
+    "location": "Shillong",
+    "name": "The Heritage Club - Tripura Castle Hotel and Spa",
+    "brief": "Royal heritage experience",
+    "rating": "Premium Hotel",
+    "imageFilename": "The Heritage Club - Tripura Castle Hotel and Spa.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-the-relyn-suite",
+    "location": "Shillong",
+    "name": "The ReLyn Suite",
+    "brief": "Stylish suite stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "The ReLyn Suite.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-rishat-sngi-orchid-resort",
+    "location": "Shillong",
+    "name": "Rishat Sngi Orchid Resort",
+    "brief": "Orchid-themed resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Rishat Sngi Orchid Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-la-nicholas-dei-da-kine-resort",
+    "location": "Shillong",
+    "name": "La Nicholas Dei Da Kine Resort",
+    "brief": "Unique hillside resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "La Nicholas Dei Da Kine Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-jkr-residency-shillong",
+    "location": "Shillong",
+    "name": "JKR Residency Shillong",
+    "brief": "Simple budget stay",
+    "rating": "Budget Stay",
+    "imageFilename": "JKR Residency Shillong.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-hotel-poinisuk",
+    "location": "Shillong",
+    "name": "Hotel Poinisuk",
+    "brief": "Comfortable city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Poinisuk.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-the-centre-point-shillong",
+    "location": "Shillong",
+    "name": "The Centre Point Shillong",
+    "brief": "Central luxury hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "The Centre Point Shillong.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-fairlawns-guest-house",
+    "location": "Shillong",
+    "name": "Fairlawns Guest House",
+    "brief": "Charming guesthouse stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Fairlawns Guest House.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-eastside-inn-hotel-and-restaurant",
+    "location": "Shillong",
+    "name": "Eastside Inn Hotel and Restaurant",
+    "brief": "Casual hotel with dining",
+    "rating": "Budget Stay",
+    "imageFilename": "Eastside Inn Hotel and Restaurant.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-cafe-shillong-bed-and-breakfast",
+    "location": "Shillong",
+    "name": "Cafe Shillong Bed and Breakfast",
+    "brief": "Café-style B&B",
+    "rating": "Budget Stay",
+    "imageFilename": "Cafe Shillong Bed and Breakfast.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-bella-vista-boutique-homestay",
+    "location": "Shillong",
+    "name": "Bella Vista Boutique Homestay",
+    "brief": "Scenic boutique homestay",
+    "rating": "Homestay",
+    "imageFilename": "Bella Vista Boutique Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-banalari-pine-inn",
+    "location": "Shillong",
+    "name": "Banalari Pine Inn",
+    "brief": "Pinewood budget inn",
+    "rating": "Budget Stay",
+    "imageFilename": "Banalari Pine Inn.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-aesthetics---the-home-stay",
+    "location": "Shillong",
+    "name": "Aesthetics - The Home Stay",
+    "brief": "Artistic homestay retreat",
+    "rating": "Homestay",
+    "imageFilename": "Aesthetics - The Home Stay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-café-sola-bnb",
+    "location": "Shillong",
+    "name": "Café Sola BNB",
+    "brief": "Trendy café B&B",
+    "rating": "Budget Stay",
+    "imageFilename": "Café Sola BNB.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-marriot-shillong",
+    "location": "Shillong",
+    "name": "Marriot-Shillong",
+    "brief": "Global luxury hotel",
+    "rating": "Premium Hotel",
+    "imageFilename": "Marriot-Shillong.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-shillong-hotel-acroplois",
+    "location": "Shillong",
+    "name": "Hotel Acroplois",
+    "brief": "Scenic hillside resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Hotel Acroplois.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-siliguri-mount-embassy-hotel--siliguri",
+    "location": "Siliguri",
+    "name": "Mount Embassy Hotel, Siliguri",
+    "brief": "Central city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Mount Embassy Hotel, Siliguri.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-siliguri-hotel-clover---banquet",
+    "location": "Siliguri",
+    "name": "Hotel Clover & Banquet",
+    "brief": "Modern banquet hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Clover & Banquet.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-hotel-tawang-heights",
+    "location": "Tawang",
+    "name": "Hotel Tawang Heights",
+    "brief": "Hilltop scenic hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Tawang Heights.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-kalawangpo-hotel",
+    "location": "Tawang",
+    "name": "Kalawangpo Hotel",
+    "brief": "Cozy hillside stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Kalawangpo Hotel.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-enchanting-tawang",
+    "location": "Tawang",
+    "name": "Enchanting Tawang",
+    "brief": "Boutique mountain retreat",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Enchanting Tawang.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-hotel-yangzom",
+    "location": "Tawang",
+    "name": "Hotel Yangzom",
+    "brief": "Comfortable local hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Yangzom.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-noryang-homestay",
+    "location": "Tawang",
+    "name": "Noryang Homestay",
+    "brief": "Traditional homestay",
+    "rating": "Homestay",
+    "imageFilename": "Noryang Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-hotel-mon-paradise",
+    "location": "Tawang",
+    "name": "Hotel Mon Paradise",
+    "brief": "Central city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Mon Paradise.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-hotel-yul-pemakhar",
+    "location": "Tawang",
+    "name": "Hotel Yul Pemakhar",
+    "brief": "Heritage‑style lodging",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Yul Pemakhar.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-the-shangri-la-serene",
+    "location": "Tawang",
+    "name": "The Shangri‑La Serene",
+    "brief": "Elegant mountain resort",
+    "rating": "4 Star Hotel",
+    "imageFilename": "The Shangri‑La Serene.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-hotel-vajra",
+    "location": "Tawang",
+    "name": "Hotel Vajra",
+    "brief": "Modern city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Vajra.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-hotel-makye-amay",
+    "location": "Tawang",
+    "name": "Hotel Makye Amay",
+    "brief": "Boutique hillside inn",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Makye Amay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-hotel-gadhen",
+    "location": "Tawang",
+    "name": "Hotel Gadhen",
+    "brief": "Cozy budget hotel",
+    "rating": "Budget Stay",
+    "imageFilename": "Hotel Gadhen.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-hotel-vivid-tawang",
+    "location": "Tawang",
+    "name": "Hotel Vivid Tawang",
+    "brief": "Stylish boutique stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel Vivid Tawang.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-the-khaar--tawang",
+    "location": "Tawang",
+    "name": "The Khaar, Tawang",
+    "brief": "Contemporary luxury hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "The Khaar, Tawang.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-tawang-homestay",
+    "location": "Tawang",
+    "name": "Tawang Homestay",
+    "brief": "Homely mountain retreat",
+    "rating": "Homestay",
+    "imageFilename": "Tawang Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-dondrub-homestay---resort",
+    "location": "Tawang",
+    "name": "Dondrub Homestay & Resort",
+    "brief": "Scenic homestay resort",
+    "rating": "Homestay",
+    "imageFilename": "Dondrub Homestay & Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-vivanta-arunachal-pradesh",
+    "location": "Tawang",
+    "name": "Vivanta Arunachal Pradesh",
+    "brief": "Premium five‑star hotel",
+    "rating": "Premium Hotel",
+    "imageFilename": "Vivanta Arunachal Pradesh.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-timilo-boutique",
+    "location": "Tawang",
+    "name": "Timilo Boutique",
+    "brief": "Chic boutique lodging",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Timilo Boutique.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tawang-monkhem-tawang",
+    "location": "Tawang",
+    "name": "Monkhem Tawang",
+    "brief": "Rustic hillside retreat",
+    "rating": "Budget Stay",
+    "imageFilename": "Monkhem Tawang.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tezpur-heritage-tezpur",
+    "location": "Tezpur",
+    "name": "Heritage Tezpur",
+    "brief": "Historic boutique hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Heritage Tezpur.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tezpur-hotel-krc-palace",
+    "location": "Tezpur",
+    "name": "Hotel KRC Palace",
+    "brief": "Central city hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Hotel KRC Palace.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tezpur-aditya-s-hotel-centre-point",
+    "location": "Tezpur",
+    "name": "Aditya's Hotel Centre Point",
+    "brief": "Modern business hotel",
+    "rating": "3 Star Hotel",
+    "imageFilename": "Aditya's Hotel Centre Point.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tezpur-hotel-krc-homestay",
+    "location": "Tezpur",
+    "name": "Hotel KRC Homestay",
+    "brief": "Cozy homestay lodging",
+    "rating": "Homestay",
+    "imageFilename": "Hotel KRC Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tezpur-the-greenwood-hotel--tezpur",
+    "location": "Tezpur",
+    "name": "The Greenwood Hotel, Tezpur",
+    "brief": "Comfortable urban stay",
+    "rating": "3 Star Hotel",
+    "imageFilename": "The Greenwood Hotel, Tezpur.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tezpur-cygnett-inn-imperial",
+    "location": "Tezpur",
+    "name": "Cygnett Inn Imperial",
+    "brief": "Contemporary budget hotel",
+    "rating": "Budget Stay",
+    "imageFilename": "Cygnett Inn Imperial.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-tura-hotel-polo-orchid-tura",
+    "location": "Tura",
+    "name": "Hotel Polo Orchid Tura",
+    "brief": "Premium city hotel",
+    "rating": "4 Star Hotel",
+    "imageFilename": "Hotel Polo Orchid Tura.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-umtyngar-riverside-resort",
+    "location": "Umtyngar",
+    "name": "Riverside Resort",
+    "brief": "Scenic riverside resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Riverside Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-wakro-wakro-resort",
+    "location": "Wakro",
+    "name": "Wakro Resort",
+    "brief": "Boutique nature resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Wakro Resort.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-wari-chora-mongri-homestay",
+    "location": "Wari Chora",
+    "name": "Mongri Homestay",
+    "brief": "Scenic homestay retreat",
+    "rating": "Homestay",
+    "imageFilename": "Mongri Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-wari-chora-arenghs-homestay",
+    "location": "Wari Chora",
+    "name": "Arenghs Homestay",
+    "brief": "Comfortable local homestay",
+    "rating": "Homestay",
+    "imageFilename": "Arenghs Homestay.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-zuluk-hidden-paradise-resort-zuluk",
+    "location": "Zuluk",
+    "name": "Hidden Paradise Resort Zuluk",
+    "brief": "Scenic hillside resort",
+    "rating": "3 Star Resort",
+    "imageFilename": "Hidden Paradise Resort Zuluk.jpg",
+    "active": true
+  },
+  {
+    "id": "hotel-zuluk-karma-homestay-zuluk",
+    "location": "Zuluk",
+    "name": "Karma Homestay Zuluk",
+    "brief": "Cozy family homestay",
+    "rating": "Homestay",
+    "imageFilename": "Karma Homestay Zuluk.jpg",
+    "active": true
+  }
+]
