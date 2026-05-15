@@ -220,6 +220,17 @@ function formatLeadDate(value:string) {
   return date?date.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"";
 }
 
+function calendarMonthKey(date:any) {
+  if(!date || Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`;
+}
+
+function calendarMonthLabel(key:string) {
+  const [year,month]=key.split("-").map(Number);
+  if(!year || !month) return key;
+  return new Date(year,month-1,1).toLocaleDateString("en-IN",{month:"short",year:"numeric"});
+}
+
 function getLeadEndDate(start:string, days:any) {
   const date=parseLeadDate(start);
   const count=Number(days||0);
@@ -1995,24 +2006,19 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
   const [expandedDates,setExpandedDates]=useState<Set<string>>(new Set());
   const [collapsedDates,setCollapsedDates]=useState<Set<string>>(new Set());
   const [bookedDateMode,setBookedDateMode]=useState<"booked"|"travel">("booked");
-  const [travelMonth,setTravelMonth]=useState("All");
+  const [selectedBookedMonth,setSelectedBookedMonth]=useState("");
 
-  function monthKey(value:string) {
-    const date=parseLeadDate(value);
-    if(!date) return "";
-    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`;
+  function bookedDateForLead(lead:any) {
+    if(bookedDateMode==="travel") return parseLeadDate(lead.tripDate);
+    const date=new Date(lead.bookedAt || lead.updatedAt || lead.createdAt || lead.receivedAt || "");
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 
-  function monthLabel(key:string) {
-    const [year,month]=key.split("-").map(Number);
-    if(!year || !month) return key;
-    return new Date(year,month-1,1).toLocaleDateString("en-IN",{month:"short",year:"numeric"});
-  }
-
-  const travelMonths=useMemo<string[]>(()=>{
-    const keys=Array.from(new Set(leads.map((lead:any)=>monthKey(lead.tripDate)).filter((key:string)=>Boolean(key)))) as string[];
+  const bookedMonths=useMemo<string[]>(()=>{
+    const keys=Array.from(new Set(leads.map((lead:any)=>calendarMonthKey(bookedDateForLead(lead))).filter((key:string)=>Boolean(key)))) as string[];
     return keys.sort();
-  },[leads]);
+  },[leads,bookedDateMode]);
+  const activeBookedMonth=bookedView ? (bookedMonths.includes(selectedBookedMonth) ? selectedBookedMonth : (bookedMonths[0] || "")) : "";
 
   const filtered=useMemo(()=>{
     let r=leads;
@@ -2020,17 +2026,15 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
     if(statusF!=="All")r=r.filter((l:any)=>l.status===statusF);
     if(sourceF!=="All")r=r.filter((l:any)=>l.source===sourceF);
     if(agentF!=="All")r=r.filter((l:any)=>l.assignedTo===agentF);
-    if(bookedView && bookedDateMode==="travel" && travelMonth!=="All") r=r.filter((l:any)=>monthKey(l.tripDate)===travelMonth);
+    if(bookedView && activeBookedMonth) r=r.filter((l:any)=>calendarMonthKey(bookedDateForLead(l))===activeBookedMonth);
     return [...r].sort((a:any,b:any)=>{
-      if(bookedView && bookedDateMode==="travel") return (parseLeadDate(a.tripDate)?.getTime()||0)-(parseLeadDate(b.tripDate)?.getTime()||0);
+      if(bookedView) return (bookedDateForLead(a)?.getTime()||0)-(bookedDateForLead(b)?.getTime()||0);
       return new Date(b.bookedAt||b.updatedAt||b.createdAt||0).getTime()-new Date(a.bookedAt||a.updatedAt||a.createdAt||0).getTime();
     });
-  },[leads,search,statusF,sourceF,agentF,bookedView,bookedDateMode,travelMonth]);
+  },[leads,search,statusF,sourceF,agentF,bookedView,bookedDateMode,activeBookedMonth]);
 
   function leadDateKey(lead:any) {
-    const date:any=bookedView && bookedDateMode==="travel"
-      ? parseLeadDate(lead.tripDate)
-      : new Date(lead.bookedAt || lead.updatedAt || lead.createdAt || lead.receivedAt || Date.now());
+    const date:any=bookedView ? bookedDateForLead(lead) : new Date(lead.bookedAt || lead.updatedAt || lead.createdAt || lead.receivedAt || Date.now());
     return !date || Number.isNaN(date.getTime()) ? "unknown" : date.toLocaleDateString("en-CA");
   }
 
@@ -2093,6 +2097,48 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
   const ss:any={padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:12,color:T.muted,background:T.faint,outline:"none"};
 
   if(leads.length===0) return <EmptyState onAdd={()=>onSelectLead("new")} onImport={()=>setGmail(true)}/>;
+  if(bookedView) {
+    return (
+      <div>
+        <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:"14px",marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",justifyContent:"space-between"}}>
+            <div style={{display:"flex",border:`1.5px solid ${T.border}`,borderRadius:9,overflow:"hidden",background:T.faint}}>
+              {[
+                {id:"booked",label:"Booked Date"},
+                {id:"travel",label:"Travel Date"},
+              ].map((mode:any)=>(
+                <button key={mode.id} onClick={()=>{setBookedDateMode(mode.id);setSelectedBookedMonth("");}} style={{padding:"9px 15px",border:"none",background:bookedDateMode===mode.id?T.navy:"#fff0",color:bookedDateMode===mode.id?"#fff":T.muted,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+            <div style={{fontSize:12,color:T.muted}}>
+              {bookedDateMode==="booked"?"Calendar by booking saved date.":"Calendar by trip start date."}
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:13}}>
+            {bookedMonths.length===0&&<span style={{fontSize:12,color:"#94a3b8"}}>No booked leads with a usable {bookedDateMode==="booked"?"booking":"travel"} date.</span>}
+            {bookedMonths.map((key:string)=>(
+              <button key={key} onClick={()=>setSelectedBookedMonth(key)} style={{padding:"7px 12px",borderRadius:999,border:`1px solid ${activeBookedMonth===key?T.teal:T.border}`,background:activeBookedMonth===key?T.tealPale:"#fff",color:activeBookedMonth===key?T.navy:T.muted,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>
+                {calendarMonthLabel(key)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{position:"relative",flex:1,minWidth:240}}>
+            <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:"#94a3b8"}}>Search</span>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search booked lead, phone, destination..." style={{...ss,width:"100%",paddingLeft:62,boxSizing:"border-box"}}/>
+          </div>
+          <select value={sourceF} onChange={e=>setSourceF(e.target.value)} style={ss}><option value="All">All Sources</option>{LEAD_SOURCES.map(s=><option key={s}>{s}</option>)}</select>
+          {currentUser==="owner"&&<select value={agentF} onChange={e=>setAgentF(e.target.value)} style={ss}><option value="All">All Agents</option>{leadAgentIds.map((id:string)=><option key={id} value={id}>{team[id]?.name || id}</option>)}</select>}
+        </div>
+
+        <BookedCalendarView leads={filtered} monthKey={activeBookedMonth} mode={bookedDateMode} onSelectLead={onSelectLead} team={team}/>
+      </div>
+    );
+  }
   const totalLeads=leads.length;
   const bookedLeads=leads.filter((lead:any)=>lead.status==="Booked").length;
   const pipelineValue=leads.filter((lead:any)=>lead.status==="Interested").reduce((sum:number,lead:any)=>sum+Number(lead.quoteSentValue||0),0);
@@ -2114,34 +2160,6 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
 
   return (
     <div>
-      {bookedView&&(
-        <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px",marginBottom:14}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",justifyContent:"space-between"}}>
-            <div style={{display:"flex",border:`1.5px solid ${T.border}`,borderRadius:8,overflow:"hidden"}}>
-              {[
-                {id:"booked",label:"Booked Date"},
-                {id:"travel",label:"Travel Date"},
-              ].map((mode:any)=>(
-                <button key={mode.id} onClick={()=>setBookedDateMode(mode.id)} style={{padding:"8px 14px",border:"none",background:bookedDateMode===mode.id?T.navy:"transparent",color:bookedDateMode===mode.id?"#fff":T.muted,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-                  {mode.label}
-                </button>
-              ))}
-            </div>
-            <div style={{fontSize:12,color:T.muted}}>
-              {bookedDateMode==="booked"?"Grouped by when the booking was saved.":"Grouped by trip start date."}
-            </div>
-          </div>
-          {bookedDateMode==="travel"&&(
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
-              {["All",...travelMonths].map((key:string)=>(
-                <button key={key} onClick={()=>setTravelMonth(key)} style={{padding:"6px 11px",borderRadius:999,border:`1px solid ${travelMonth===key?T.teal:T.border}`,background:travelMonth===key?T.tealPale:"#fff",color:travelMonth===key?T.navy:T.muted,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-                  {key==="All"?"All Months":monthLabel(key)}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(150px,1fr))",gap:10,marginBottom:14}}>
         {statCards.map(([label,value,color])=>(
           <div key={String(label)} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
@@ -2247,6 +2265,107 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function BookedCalendarView({leads,monthKey,mode,onSelectLead,team}:any) {
+  const pastel=[
+    {bg:"#f0f9ff",border:"#dbeafe",text:"#1e3a5f"},
+    {bg:"#f0fdf4",border:"#dcfce7",text:"#166534"},
+    {bg:"#fff7ed",border:"#ffedd5",text:"#9a3412"},
+    {bg:"#faf5ff",border:"#f3e8ff",text:"#6b21a8"},
+    {bg:"#fefce8",border:"#fef3c7",text:"#854d0e"},
+    {bg:"#fdf2f8",border:"#fce7f3",text:"#9d174d"},
+    {bg:"#f8fafc",border:"#e2e8f0",text:"#334155"},
+  ];
+
+  function dateForLead(lead:any) {
+    if(mode==="travel") return parseLeadDate(lead.tripDate);
+    const date=new Date(lead.bookedAt || lead.updatedAt || lead.createdAt || lead.receivedAt || "");
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  if(!monthKey) {
+    return (
+      <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:32,textAlign:"center",color:T.muted,fontSize:13}}>
+        No booked leads available for the selected view.
+      </div>
+    );
+  }
+
+  const [year,month]=monthKey.split("-").map(Number);
+  const first=new Date(year,month-1,1);
+  const daysInMonth=new Date(year,month,0).getDate();
+  const startOffset=(first.getDay()+6)%7;
+  const cellCount=Math.ceil((startOffset+daysInMonth)/7)*7;
+  const todayKey=new Date().toLocaleDateString("en-CA");
+  const byDay:Record<number,any[]>={};
+  leads.forEach((lead:any)=>{
+    const date=dateForLead(lead);
+    if(!date || calendarMonthKey(date)!==monthKey) return;
+    const day=date.getDate();
+    byDay[day]=byDay[day]||[];
+    byDay[day].push(lead);
+  });
+  Object.keys(byDay).forEach(day=>{
+    byDay[Number(day)].sort((a:any,b:any)=>(a.name||"").localeCompare(b.name||""));
+  });
+
+  return (
+    <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,padding:"14px 16px",borderBottom:`1px solid ${T.border}`,background:"#fbfdfe"}}>
+        <div>
+          <div style={{fontSize:18,fontWeight:900,color:T.navy}}>{calendarMonthLabel(monthKey)}</div>
+          <div style={{fontSize:12,color:T.muted,marginTop:3}}>
+            {mode==="travel"?"Trips starting this month":"Bookings saved this month"} - {leads.length} lead{leads.length!==1?"s":""}
+          </div>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(140px,1fr))",background:T.border,gap:1,overflowX:"auto"}}>
+        {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(day=>(
+          <div key={day} style={{background:"#f8fcfd",padding:"10px 12px",fontSize:11,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.04em"}}>
+            {day}
+          </div>
+        ))}
+        {Array.from({length:cellCount}).map((_,index)=>{
+          const day=index-startOffset+1;
+          const inMonth=day>=1 && day<=daysInMonth;
+          const cellDate=inMonth?new Date(year,month-1,day):null;
+          const key=cellDate?.toLocaleDateString("en-CA") || "";
+          const dayLeads=inMonth?(byDay[day]||[]):[];
+          return (
+            <div key={index} style={{minHeight:132,padding:10,background:inMonth?"#fbfdfe":"#f8fafc",boxShadow:key===todayKey?`inset 0 0 0 2px ${T.accent}`:"none"}}>
+              {inMonth&&(
+                <>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <span style={{fontSize:13,fontWeight:900,color:key===todayKey?T.teal:T.navy}}>{day}</span>
+                    {dayLeads.length>0&&<span style={{fontSize:10,fontWeight:900,color:T.muted,background:"#eef7f8",border:`1px solid ${T.border}`,borderRadius:999,padding:"2px 7px"}}>{dayLeads.length}</span>}
+                  </div>
+                  <div style={{display:"grid",gap:6}}>
+                    {dayLeads.map((lead:any,i:number)=>{
+                      const color=pastel[i%pastel.length];
+                      const agent=team?.[lead.assignedTo];
+                      return (
+                        <button key={lead.id} onClick={()=>onSelectLead(lead)} style={{textAlign:"left",border:`1px solid ${color.border}`,background:color.bg,borderRadius:8,padding:"7px 8px",cursor:"pointer",fontFamily:"inherit",boxShadow:"0 1px 0 rgba(13,45,58,0.03)"}}>
+                          <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"space-between"}}>
+                            <span style={{fontSize:12,fontWeight:900,color:color.text,lineHeight:1.25}}>{lead.name}</span>
+                            {agent&&<span style={{fontSize:9,fontWeight:900,color:T.muted,background:"#fff",border:`1px solid ${T.border}`,borderRadius:999,padding:"1px 5px"}}>{agent.initials}</span>}
+                          </div>
+                          <div style={{fontSize:10.5,color:T.muted,marginTop:4,lineHeight:1.35}}>
+                            {(lead.destination||lead.landingPage||"Destination")} {lead.paxCount?`- ${lead.paxCount} pax`:""}
+                          </div>
+                          {mode==="travel"&&lead.days&&<div style={{fontSize:10.5,color:T.muted,marginTop:2}}>{lead.days} days</div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ReifyCRM() {
   const [user,setUser]             =useState("owner");
   const [signedInUser,setSignedInUser]=useState("owner");
