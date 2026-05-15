@@ -1985,7 +1985,7 @@ function GmailImportPanel({onImport,existingLeads=[],autoSync=false,onAutoSyncTo
 }
 
 // --- LEADS TABLE -------------------------------------------------------------
-function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS,collapsePastDates=false}:any) {
+function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS,collapsePastDates=false,bookedView=false}:any) {
   const [search,setSearch]=useState("");
   const [statusF,setStatusF]=useState("All");
   const [sourceF,setSourceF]=useState("All");
@@ -1994,6 +1994,25 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
   const [gmail,setGmail]=useState(false);
   const [expandedDates,setExpandedDates]=useState<Set<string>>(new Set());
   const [collapsedDates,setCollapsedDates]=useState<Set<string>>(new Set());
+  const [bookedDateMode,setBookedDateMode]=useState<"booked"|"travel">("booked");
+  const [travelMonth,setTravelMonth]=useState("All");
+
+  function monthKey(value:string) {
+    const date=parseLeadDate(value);
+    if(!date) return "";
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`;
+  }
+
+  function monthLabel(key:string) {
+    const [year,month]=key.split("-").map(Number);
+    if(!year || !month) return key;
+    return new Date(year,month-1,1).toLocaleDateString("en-IN",{month:"short",year:"numeric"});
+  }
+
+  const travelMonths=useMemo<string[]>(()=>{
+    const keys=Array.from(new Set(leads.map((lead:any)=>monthKey(lead.tripDate)).filter((key:string)=>Boolean(key)))) as string[];
+    return keys.sort();
+  },[leads]);
 
   const filtered=useMemo(()=>{
     let r=leads;
@@ -2001,12 +2020,18 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
     if(statusF!=="All")r=r.filter((l:any)=>l.status===statusF);
     if(sourceF!=="All")r=r.filter((l:any)=>l.source===sourceF);
     if(agentF!=="All")r=r.filter((l:any)=>l.assignedTo===agentF);
-    return [...r].sort((a:any,b:any)=>new Date(b.createdAt||0).getTime()-new Date(a.createdAt||0).getTime());
-  },[leads,search,statusF,sourceF,agentF]);
+    if(bookedView && bookedDateMode==="travel" && travelMonth!=="All") r=r.filter((l:any)=>monthKey(l.tripDate)===travelMonth);
+    return [...r].sort((a:any,b:any)=>{
+      if(bookedView && bookedDateMode==="travel") return (parseLeadDate(a.tripDate)?.getTime()||0)-(parseLeadDate(b.tripDate)?.getTime()||0);
+      return new Date(b.bookedAt||b.updatedAt||b.createdAt||0).getTime()-new Date(a.bookedAt||a.updatedAt||a.createdAt||0).getTime();
+    });
+  },[leads,search,statusF,sourceF,agentF,bookedView,bookedDateMode,travelMonth]);
 
   function leadDateKey(lead:any) {
-    const date=new Date(lead.createdAt || lead.receivedAt || Date.now());
-    return Number.isNaN(date.getTime()) ? "unknown" : date.toLocaleDateString("en-CA");
+    const date:any=bookedView && bookedDateMode==="travel"
+      ? parseLeadDate(lead.tripDate)
+      : new Date(lead.bookedAt || lead.updatedAt || lead.createdAt || lead.receivedAt || Date.now());
+    return !date || Number.isNaN(date.getTime()) ? "unknown" : date.toLocaleDateString("en-CA");
   }
 
   function leadDateLabel(key:string) {
@@ -2089,6 +2114,34 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
 
   return (
     <div>
+      {bookedView&&(
+        <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px",marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",justifyContent:"space-between"}}>
+            <div style={{display:"flex",border:`1.5px solid ${T.border}`,borderRadius:8,overflow:"hidden"}}>
+              {[
+                {id:"booked",label:"Booked Date"},
+                {id:"travel",label:"Travel Date"},
+              ].map((mode:any)=>(
+                <button key={mode.id} onClick={()=>setBookedDateMode(mode.id)} style={{padding:"8px 14px",border:"none",background:bookedDateMode===mode.id?T.navy:"transparent",color:bookedDateMode===mode.id?"#fff":T.muted,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+            <div style={{fontSize:12,color:T.muted}}>
+              {bookedDateMode==="booked"?"Grouped by when the booking was saved.":"Grouped by trip start date."}
+            </div>
+          </div>
+          {bookedDateMode==="travel"&&(
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
+              {["All",...travelMonths].map((key:string)=>(
+                <button key={key} onClick={()=>setTravelMonth(key)} style={{padding:"6px 11px",borderRadius:999,border:`1px solid ${travelMonth===key?T.teal:T.border}`,background:travelMonth===key?T.tealPale:"#fff",color:travelMonth===key?T.navy:T.muted,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                  {key==="All"?"All Months":monthLabel(key)}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(150px,1fr))",gap:10,marginBottom:14}}>
         {statCards.map(([label,value,color])=>(
           <div key={String(label)} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
@@ -2529,7 +2582,7 @@ export default function ReifyCRM() {
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
         {tab==="allleads"&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="leads"&&<LeadsTable leads={activeVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds} collapsePastDates/>}
-        {tab==="booked"&&<LeadsTable leads={bookedVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="booked"&&<LeadsTable leads={bookedVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds} bookedView/>}
         {tab==="cancelled"&&<LeadsTable leads={cancelledVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
       </main>
 
