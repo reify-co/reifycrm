@@ -2368,13 +2368,14 @@ function BookedCalendarView({leads,monthKey,mode,onSelectLead,team}:any) {
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginTop:14}}>
           {monthStatCards.map(([label,count]:any,index:number)=>{
             const color=statColors[index%statColors.length];
+            const isTotal=index===0;
             return (
-              <div key={label} style={{background:color.bg,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px",boxShadow:"0 1px 0 rgba(13,45,58,0.03)"}}>
+              <div key={label} style={{background:isTotal?T.navy:color.bg,border:`1px solid ${isTotal?T.navy:T.border}`,borderRadius:10,padding:"12px 14px",boxShadow:"0 1px 0 rgba(13,45,58,0.03)"}}>
                 <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:12}}>
-                  <span style={{width:7,height:7,borderRadius:999,background:color.dot,display:"inline-block"}}/>
-                  <span style={{fontSize:10,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>
+                  <span style={{width:7,height:7,borderRadius:999,background:isTotal?"#d6eef2":color.dot,display:"inline-block"}}/>
+                  <span style={{fontSize:10,fontWeight:900,color:isTotal?"#d6eef2":T.muted,textTransform:"uppercase",letterSpacing:"0.08em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>
                 </div>
-                <div style={{fontSize:22,fontWeight:900,color:color.num,fontFamily:"Georgia,serif",lineHeight:1}}>{count}</div>
+                <div style={{fontSize:22,fontWeight:900,color:isTotal?"#ffffff":color.num,fontFamily:"Georgia,serif",lineHeight:1}}>{count}</div>
               </div>
             );
           })}
@@ -2404,6 +2405,8 @@ function BookedCalendarView({leads,monthKey,mode,onSelectLead,team}:any) {
                     {dayLeads.map((lead:any,i:number)=>{
                       const color=pastel[i%pastel.length];
                       const agent=team?.[lead.assignedTo];
+                      const endDate=getLeadEndDate(lead.tripDate,lead.days);
+                      const activities=(lead.activities||[]).filter(Boolean);
                       return (
                         <button key={lead.id} onClick={()=>onSelectLead(lead)} style={{textAlign:"left",border:`1px solid ${color.border}`,background:color.bg,borderRadius:8,padding:"7px 8px",cursor:"pointer",fontFamily:"inherit",boxShadow:"0 1px 0 rgba(13,45,58,0.03)"}}>
                           <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"space-between"}}>
@@ -2413,7 +2416,8 @@ function BookedCalendarView({leads,monthKey,mode,onSelectLead,team}:any) {
                           <div style={{fontSize:10.5,color:T.muted,marginTop:4,lineHeight:1.35}}>
                             {(lead.destination||lead.landingPage||"Destination")} {lead.paxCount?`- ${lead.paxCount} pax`:""}
                           </div>
-                          {mode==="travel"&&lead.days&&<div style={{fontSize:10.5,color:T.muted,marginTop:2}}>{lead.days} days</div>}
+                          {endDate&&<div style={{fontSize:10.5,color:T.muted,marginTop:2}}>End Date - {endDate}</div>}
+                          {activities.length>0&&<div style={{fontSize:10.5,color:"#b45309",fontWeight:400,marginTop:3,lineHeight:1.35}}>{activities.join(", ")}</div>}
                         </button>
                       );
                     })}
