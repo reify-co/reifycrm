@@ -1508,13 +1508,12 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
     .sort((a:any,b:any)=>b._priority.score-a._priority.score || new Date(b.createdAt||0).getTime()-new Date(a.createdAt||0).getTime())
     .slice(0,8);
   const today=startOfLocalDay();
-  const dueReminders=activeLeads.flatMap((lead:any)=>(lead.reminders||[])
+  const reminderItems=activeLeads.flatMap((lead:any)=>(lead.reminders||[])
     .filter((r:any)=>!r.isCompleted && parseLeadDate(r.dueDate))
-    .map((r:any)=>({lead,reminder:r,due:parseLeadDate(r.dueDate)})))
-    .filter((item:any)=>startOfLocalDay(item.due).getTime()<=today.getTime())
-    .sort((a:any,b:any)=>a.due.getTime()-b.due.getTime())
-    .slice(0,6);
-  const maxStage=Math.max(1,...KANBAN_STATUSES.map(status=>activeLeads.filter((l:any)=>l.status===status).length));
+    .map((r:any)=>({lead,reminder:r,due:startOfLocalDay(parseLeadDate(r.dueDate) || new Date())})))
+    .sort((a:any,b:any)=>a.due.getTime()-b.due.getTime() || String(a.reminder.dueTime||"").localeCompare(String(b.reminder.dueTime||"")));
+  const todayReminders=reminderItems.filter((item:any)=>item.due.getTime()===today.getTime()).slice(0,6);
+  const overdueReminders=reminderItems.filter((item:any)=>item.due.getTime()<today.getTime()).slice(0,6);
   const takingLeads=activeLeadTaker?.agentId===currentUser;
   const activeAgentId=activeLeadTaker?.agentId || "";
   const activeAgent=activeAgentId ? team[activeAgentId] : null;
@@ -1545,18 +1544,28 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
         </div>
       </div>
 
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,background:autoSync?"#ecfdf5":T.faint,border:`1px solid ${autoSync?"#bbf7d0":T.border}`,borderRadius:10,padding:"11px 14px",marginBottom:14}}>
-        <div>
-          <div style={{fontSize:13,fontWeight:800,color:autoSync?"#166534":T.navy}}>Gmail auto-sync is {autoSync?"active":"off"}</div>
-          <div style={{fontSize:11,color:autoSync?"#15803d":T.muted,marginTop:2}}>
-            {lastChecked?`Last checked ${lastChecked}. `:""}New emails will be saved under {activeAgent?.name || "whoever starts taking leads"}.
+      <div style={{display:"grid",gridTemplateColumns:"minmax(520px,1.35fr) minmax(320px,0.65fr)",gap:12,marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,background:autoSync?"#ecfdf5":T.faint,border:`1px solid ${autoSync?"#bbf7d0":T.border}`,borderRadius:10,padding:"11px 14px",minHeight:76}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:autoSync?"#166534":T.navy}}>Gmail auto-sync is {autoSync?"active":"off"}</div>
+            <div style={{fontSize:11,color:autoSync?"#15803d":T.muted,marginTop:2}}>
+              {lastChecked?`Last checked ${lastChecked}. `:""}New emails will be saved under {activeAgent?.name || "whoever starts taking leads"}.
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end"}}>
+            {!takingLeads&&<Btn small onClick={()=>onTakeLeads(currentUser)}>I am taking leads</Btn>}
+            {takingLeads&&<Btn small variant="secondary" onClick={()=>onStopTakingLeads(currentUser)}>Stop taking leads</Btn>}
+            {takingLeads&&otherAgents.map((id:string)=><Btn key={id} small variant="ghost" onClick={()=>onPassLeadTaker(id,currentUser)}>Pass to {team[id]?.name || id}</Btn>)}
+            <Btn small variant={autoSync?"secondary":"primary"} onClick={onAutoSyncToggle}>{autoSync?"Stop Sync":"Sync Now"}</Btn>
           </div>
         </div>
-        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end"}}>
-          {!takingLeads&&<Btn small onClick={()=>onTakeLeads(currentUser)}>I am taking leads</Btn>}
-          {takingLeads&&<Btn small variant="secondary" onClick={()=>onStopTakingLeads(currentUser)}>Stop taking leads</Btn>}
-          {takingLeads&&otherAgents.map((id:string)=><Btn key={id} small variant="ghost" onClick={()=>onPassLeadTaker(id,currentUser)}>Pass to {team[id]?.name || id}</Btn>)}
-          <Btn small variant={autoSync?"secondary":"primary"} onClick={onAutoSyncToggle}>{autoSync?"Stop Sync":"Sync Now"}</Btn>
+
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"11px 14px",minHeight:76}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:T.navy}}>Connect Gmail & Search</div>
+            <div style={{fontSize:11,color:T.muted,marginTop:2}}>Use this for manual Gmail import.</div>
+          </div>
+          <Btn small variant="secondary" onClick={onOpenInbox}>Import from Gmail</Btn>
         </div>
       </div>
 
@@ -1603,46 +1612,35 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
         </div>
 
         <div style={{display:"grid",gap:12}}>
-          <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 16px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-              <div style={{fontSize:12,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em"}}>Today's Follow-ups</div>
-              {dueReminders.length>0&&<span style={{fontSize:11,fontWeight:800,color:"#92400e",background:"#fef3c7",padding:"3px 8px",borderRadius:999}}>{dueReminders.length} due</span>}
-            </div>
-            {dueReminders.length===0&&<div style={{padding:"24px 0",textAlign:"center",fontSize:13,color:"#94a3b8"}}>No due follow-ups.</div>}
-            {dueReminders.map((item:any)=>(
-              <div key={`${item.lead.id}-${item.reminder.id}`} onClick={()=>onSelectLead(item.lead)} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"9px 10px",border:`1px solid ${T.faint}`,borderRadius:8,marginBottom:7,cursor:"pointer",background:"#fbfdfe"}}>
-                <input type="checkbox" readOnly checked={false} style={{marginTop:2}}/>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:12,fontWeight:800,color:T.navy}}>{item.lead.name}</div>
-                  <div style={{fontSize:11,color:T.muted,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.reminder.note}</div>
-                </div>
-                <span style={{fontSize:10,fontWeight:800,color:"#92400e",background:"#fef3c7",borderRadius:999,padding:"3px 7px"}}>{item.reminder.dueTime || "Due"}</span>
-              </div>
-            ))}
-          </div>
-
-          <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 16px"}}>
-            <div style={{fontSize:12,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:12}}>Pipeline by Stage</div>
-            {KANBAN_STATUSES.map(status=>{
-              const meta=STATUS_META[status];
-              const count=activeLeads.filter((l:any)=>l.status===status).length;
-              const value=activeLeads.filter((l:any)=>l.status===status).reduce((sum:number,l:any)=>sum+Number(l.quoteSentValue||l.budget||0),0);
-              return <div key={status} style={{display:"grid",gridTemplateColumns:"110px 1fr 74px",gap:8,alignItems:"center",marginBottom:8}}>
-                <div style={{fontSize:12,color:T.navy,fontWeight:700}}><span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:meta.dot,marginRight:7}}/>{statusLabel(status)}</div>
-                <div style={{height:5,borderRadius:99,background:T.faint,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.max(4,(count/maxStage)*100)}%`,background:meta.dot,borderRadius:99}}/></div>
-                <div style={{fontSize:11,color:T.muted,textAlign:"right"}}>{count} {value?money(value):""}</div>
-              </div>;
-            })}
-          </div>
-
-          <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"18px 16px",textAlign:"center"}}>
-            <div style={{width:34,height:34,borderRadius:10,background:"#fee2e2",color:"#b91c1c",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px",fontWeight:900}}>M</div>
-            <div style={{fontSize:13,fontWeight:900,color:T.navy}}>Connect Gmail & Search</div>
-            <div style={{fontSize:11,color:T.muted,margin:"5px 0 12px"}}>Import leads directly from Gmail when auto-sync is off.</div>
-            <Btn variant="secondary" style={{width:"100%",justifyContent:"center"}} onClick={onOpenInbox}>Import from Gmail</Btn>
-          </div>
+          <FollowUpBox title="Today's Follow-ups" items={todayReminders} emptyText="No follow-ups due today." onSelectLead={onSelectLead}/>
+          <FollowUpBox title="Overdue Follow-ups" items={overdueReminders} emptyText="No overdue follow-ups." overdue onSelectLead={onSelectLead}/>
         </div>
       </div>
+    </div>
+  );
+}
+
+function FollowUpBox({title,items,emptyText,onSelectLead,overdue=false}:any) {
+  return (
+    <div style={{background:"#fff",border:`1px solid ${overdue?"#fecaca":T.border}`,borderRadius:10,padding:"14px 16px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <div style={{fontSize:12,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em"}}>{title}</div>
+        {items.length>0&&<span style={{fontSize:11,fontWeight:800,color:overdue?"#b91c1c":"#92400e",background:overdue?"#fee2e2":"#fef3c7",padding:"3px 8px",borderRadius:999}}>{items.length} due</span>}
+      </div>
+      {items.length===0&&<div style={{padding:"24px 0",textAlign:"center",fontSize:13,color:"#94a3b8"}}>{emptyText}</div>}
+      {items.map((item:any)=>(
+        <div key={`${item.lead.id}-${item.reminder.id}`} onClick={()=>onSelectLead(item.lead)} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"9px 10px",border:`1px solid ${overdue?"#fee2e2":T.faint}`,borderRadius:8,marginBottom:7,cursor:"pointer",background:overdue?"#fff7f7":"#fbfdfe"}}>
+          <input type="checkbox" readOnly checked={false} style={{marginTop:2}}/>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:800,color:T.navy}}>{item.lead.name}</div>
+            <div style={{fontSize:11,color:T.muted,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.reminder.note}</div>
+            <div style={{fontSize:10,color:T.muted,marginTop:2}}>{item.lead.destination||item.lead.landingPage||"-"}</div>
+          </div>
+          <span style={{fontSize:10,fontWeight:800,color:overdue?"#b91c1c":"#92400e",background:overdue?"#fee2e2":"#fef3c7",borderRadius:999,padding:"3px 7px",whiteSpace:"nowrap"}}>
+            {overdue?formatLeadDate(item.reminder.dueDate):(item.reminder.dueTime || "Today")}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
