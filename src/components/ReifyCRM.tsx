@@ -35,6 +35,7 @@ const FOLLOWUP_OUTCOMES = ["Reached","No Answer","Callback Requested","Sent Info
 const HEAT_TAGS  = ["🔥 Hot","🌤 Warm","❄️ Cold"];
 const BUDGET_TAGS= ["💚 Budget","💛 Mid","🔴 Premium"];
 const MONTHS     = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const ACTIVITY_OPTIONS = ["ILP","J.Safari","E.Safari","Cruise","Boat","Bum","Nath","DDB Guid","Krem Guid","Zip","Cksm brdg","Splt rok gd","Bmb Guid","Mamluh Guid","Raft","Cake","Room Decor"];
 
 const STATUS_META: Record<string,any> = {
   "New":          {bg:"#dbeafe",text:"#1e40af",dot:"#3b82f6",col:"#eff6ff"},
@@ -448,6 +449,29 @@ function TagPicker({tags,onChange}:any) {
 }
 
 // ─── WHATSAPP TEMPLATES ───────────────────────────────────────────────────────
+function ActivityChecklist({value=[],onChange}:any) {
+  const selected=new Set(value||[]);
+  function toggle(activity:string) {
+    const next=new Set(selected);
+    if(next.has(activity)) next.delete(activity);
+    else next.add(activity);
+    onChange(Array.from(next));
+  }
+  return (
+    <div style={{gridColumn:"1/-1",marginBottom:14}}>
+      <label style={{display:"block",fontSize:12,fontWeight:600,color:T.muted,marginBottom:8}}>Activity</label>
+      <div style={{background:T.faint,border:`1.5px solid ${T.border}`,borderRadius:10,padding:12,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:8}}>
+        {ACTIVITY_OPTIONS.map(activity=>(
+          <label key={activity} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 9px",borderRadius:8,background:selected.has(activity)?"#fff":"transparent",border:`1px solid ${selected.has(activity)?T.border:"transparent"}`,fontSize:13,fontWeight:selected.has(activity)?700:500,color:T.navy,cursor:"pointer"}}>
+            <input type="checkbox" checked={selected.has(activity)} onChange={()=>toggle(activity)} style={{accentColor:T.teal}}/>
+            <span>{activity}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function WATemplates({lead,onClose}:any) {
   const [copied,setCopied]=useState("");
   const phone=lead.phone?.replace(/\D/g,"");
@@ -499,7 +523,7 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},team=TEAM,leadA
     days:lead?.days||"", paxCount:lead?.paxCount||2, budget:lead?.budget||"", quoteSentValue:lead?.quoteSentValue||"",
     message:lead?.message||"", specialRequests:lead?.specialRequests||"",
     notes:lead?.notes||"", gclid:lead?.gclid||"",
-    tags:lead?.tags||[],
+    tags:lead?.tags||[], activities:lead?.activities||[],
   });
   const s=(k:string)=>(v:any)=>setF(p=>({...p,[k]:v}));
   const submit=()=>{
@@ -531,6 +555,7 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},team=TEAM,leadA
         <Inp label="Package Type" value={f.packageType} onChange={s("packageType")} placeholder="e.g. Family, honeymoon, premium, custom" fullWidth/>
         <Inp label="Budget (₹)" value={f.budget} onChange={s("budget")} type="number" placeholder="e.g. 45000"/>
         <Inp label="Quote Sent Value (₹)" value={f.quoteSentValue} onChange={s("quoteSentValue")} type="number" placeholder="e.g. 65000"/>
+        <ActivityChecklist value={f.activities} onChange={s("activities")}/>
       </div>
       <Inp label="Message from Enquiry" value={f.message} onChange={s("message")} type="textarea" placeholder="What the client wrote in their enquiry form..."/>
 
