@@ -1985,13 +1985,15 @@ function GmailImportPanel({onImport,existingLeads=[],autoSync=false,onAutoSyncTo
 }
 
 // --- LEADS TABLE -------------------------------------------------------------
-function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
+function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS,collapsePastDates=false}:any) {
   const [search,setSearch]=useState("");
   const [statusF,setStatusF]=useState("All");
   const [sourceF,setSourceF]=useState("All");
   const [agentF,setAgentF]=useState("All");
   const [view,setView]=useState<"table"|"kanban">("table");
   const [gmail,setGmail]=useState(false);
+  const [expandedDates,setExpandedDates]=useState<Set<string>>(new Set());
+  const [collapsedDates,setCollapsedDates]=useState<Set<string>>(new Set());
 
   const filtered=useMemo(()=>{
     let r=leads;
@@ -2026,6 +2028,22 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
     });
     return Object.entries(groups).sort(([a],[b])=>b.localeCompare(a));
   },[filtered]);
+
+  const todayGroupKey=new Date().toLocaleDateString("en-CA");
+  function isDateGroupCollapsed(key:string) {
+    if(expandedDates.has(key)) return false;
+    if(collapsedDates.has(key)) return true;
+    return collapsePastDates && key!==todayGroupKey;
+  }
+  function toggleDateGroup(key:string) {
+    if(isDateGroupCollapsed(key)) {
+      setExpandedDates(prev=>new Set(prev).add(key));
+      setCollapsedDates(prev=>{const next=new Set(prev); next.delete(key); return next;});
+    } else {
+      setCollapsedDates(prev=>new Set(prev).add(key));
+      setExpandedDates(prev=>{const next=new Set(prev); next.delete(key); return next;});
+    }
+  }
 
   function importGmail(importedLeads:any[]) {
     const today=new Date().toISOString().split("T")[0];
@@ -2111,12 +2129,14 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
               <tbody>
                 {filtered.length===0&&<tr><td colSpan={12} style={{textAlign:"center",padding:"40px",color:"#94a3b8",fontSize:13}}>No leads match your filters.</td></tr>}
                 {grouped.flatMap(([dateKey,items])=>{
+                  const collapsed=isDateGroupCollapsed(dateKey);
                   const counts=leadAgentIds.map((id:string)=>({id,name:team[id]?.name||id,count:items.filter((l:any)=>l.assignedTo===id).length}));
                   const booked=items.filter((l:any)=>l.status==="Booked").length;
                   return [
-                    <tr key={`date-${dateKey}`} style={{background:"#f8fcfd"}}>
+                    <tr key={`date-${dateKey}`} style={{background:"#f8fcfd",cursor:"pointer"}} onClick={()=>toggleDateGroup(dateKey)}>
                       <td colSpan={12} style={{padding:"12px 14px",borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`}}>
                         <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                          <span style={{fontSize:13,fontWeight:900,color:T.muted,width:18}}>{collapsed?"+":"-"}</span>
                           <span style={{fontSize:14,fontWeight:900,color:T.navy}}>{leadDateLabel(dateKey)}</span>
                           <TablePill>{items.length} Lead{items.length!==1?"s":""}</TablePill>
                           {counts.map((c: any)=><span key={c.id} style={{fontSize:11,fontWeight:700,color:T.muted,background:"#fff",border:`1px solid ${T.border}`,padding:"3px 8px",borderRadius:999}}>{c.name}: {c.count}</span>)}
@@ -2124,7 +2144,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
                         </div>
                       </td>
                     </tr>,
-                    ...items.map((lead:any)=>{const agent=team[lead.assignedTo]; const tag=primaryTag(lead.tags); const state=getLeadState(lead);
+                    ...(collapsed?[]:items.map((lead:any)=>{const agent=team[lead.assignedTo]; const tag=primaryTag(lead.tags); const state=getLeadState(lead);
                       return <tr key={lead.id} style={{borderBottom:`1px solid ${T.faint}`,cursor:"pointer"}}
                     onMouseEnter={e=>(e.currentTarget as any).style.background=T.faint}
                     onMouseLeave={e=>(e.currentTarget as any).style.background=""}
@@ -2157,7 +2177,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
                       </div>
                     </td>
                   </tr>;
-                    })
+                    }))
                   ];
                 })}
               </tbody>
@@ -2364,19 +2384,21 @@ export default function ReifyCRM() {
     return ()=>{cancelled=true; window.clearInterval(timer);};
   },[autoSync,activeLeadTaker,leaveData,leadAgentIds]);
 
-  const activeVisible=visible.filter((l:any)=>l.status!=="Lost");
+  const activeVisible=visible.filter((l:any)=>!["Booked","Lost"].includes(l.status));
+  const bookedVisible=visible.filter((l:any)=>l.status==="Booked");
   const cancelledVisible=visible.filter((l:any)=>l.status==="Lost");
   const pendingCount=leads.flatMap((l:any)=>l.reminders.filter((r:any)=>!r.isCompleted)).length;
   const isTeamUser=leadAgentIds.includes(user);
 
   const nav=[
     {id:"dashboard",icon:"DB",label:"Dashboard",  roles:["owner",...leadAgentIds]},
-    {id:"inbox",    icon:"IN",label:"Lead Inbox",  roles:["owner",...leadAgentIds], badge:0},
+    {id:"inbox",    icon:"IN",label:"Lead Inbox",  roles:["owner"], badge:0},
     {id:"team",     icon:"TM",label:"Team",        roles:["owner"],          badge:0},
     {id:"settings", icon:"ST",label:"Team Settings",roles:["owner"],          badge:0},
     {id:"allleads", icon:"AL",label:"All Leads",   roles:["owner"],          badge:leads.length},
-    {id:"leads",    icon:"ML",label:"My All Leads",roles:leadAgentIds, badge:activeVisible.length},
-    {id:"cancelled",icon:"X", label:"Cancelled by Me",roles:leadAgentIds, badge:cancelledVisible.length},
+    {id:"leads",    icon:"AL",label:"Active Leads",roles:leadAgentIds, badge:activeVisible.length},
+    {id:"booked",   icon:"BL",label:"Booked Leads",roles:leadAgentIds, badge:bookedVisible.length},
+    {id:"cancelled",icon:"CL",label:"Cancelled Leads",roles:leadAgentIds, badge:cancelledVisible.length},
   ].filter(n=>n.roles.includes(user));
 
   if(!authReady) {
@@ -2409,7 +2431,7 @@ export default function ReifyCRM() {
                 <div style={{fontSize:12,fontWeight:700,color:user===u.id?T.accent:"#4a8090"}}>{u.name}</div>
                 <div style={{fontSize:10,color:"#2d5060",textTransform:"capitalize"}}>{u.role}</div>
               </div>
-              {user===u.id&&<span style={{marginLeft:"auto",width:6,height:6,borderRadius:"50%",background:u.color}}/>}
+              {activeLeadTaker?.agentId===u.id&&<span title="Active lead taker" style={{marginLeft:"auto",width:7,height:7,borderRadius:"50%",background:"#f97316"}}/>}
             </button>
           ))}
         </div>
@@ -2491,8 +2513,9 @@ export default function ReifyCRM() {
               {tab==="team"&&"Team Performance"}
               {tab==="settings"&&"Team Settings"}
               {tab==="allleads"&&"All Leads"}
-              {tab==="leads"&&"My All Leads"}
-              {tab==="cancelled"&&"Cancelled by Me"}
+              {tab==="leads"&&"Active Leads"}
+              {tab==="booked"&&"Booked Leads"}
+              {tab==="cancelled"&&"Cancelled Leads"}
             </h1>
             <p style={{margin:"4px 0 0",fontSize:13,color:T.muted}}>{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})} · {team[user].name}</p>
           </div>
@@ -2505,7 +2528,8 @@ export default function ReifyCRM() {
         {tab==="team"     &&<TeamPerformancePage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
         {tab==="allleads"&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
-        {tab==="leads"&&<LeadsTable leads={activeVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="leads"&&<LeadsTable leads={activeVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds} collapsePastDates/>}
+        {tab==="booked"&&<LeadsTable leads={bookedVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="cancelled"&&<LeadsTable leads={cancelledVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
       </main>
 
