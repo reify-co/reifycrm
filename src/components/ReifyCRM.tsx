@@ -241,6 +241,29 @@ function getLeadEndDate(start:string, days:any) {
   return end.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
 }
 
+function leadTouchDate(lead:any) {
+  const date=new Date(lead.lastTouchedAt || lead.updatedAt || lead.lastContact || lead.createdAt || "");
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isSameLocalDay(a:any,b=new Date()) {
+  const date=a instanceof Date ? a : new Date(a);
+  if(Number.isNaN(date.getTime())) return false;
+  return date.getFullYear()===b.getFullYear() && date.getMonth()===b.getMonth() && date.getDate()===b.getDate();
+}
+
+function touchedLabel(lead:any) {
+  const date=leadTouchDate(lead);
+  if(!date) return "Not touched";
+  const today=new Date();
+  const yesterday=new Date(today); yesterday.setDate(today.getDate()-1);
+  const time=date.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+  if(isSameLocalDay(date,today)) return `Today ${time}`;
+  if(isSameLocalDay(date,yesterday)) return "Yesterday";
+  const days=Math.max(1,Math.floor((startOfLocalDay(today).getTime()-startOfLocalDay(date).getTime())/86400000));
+  return `${days} days ago`;
+}
+
 function dateInputValue(value:string) {
   const date=parseLeadDate(value);
   if(!date) return "";
@@ -1116,44 +1139,121 @@ function KanbanView({leads,onSelectLead}:any) {
 }
 
 // ─── ROTATION BANNER ──────────────────────────────────────────────────────────
-function KanbanCompactView({leads,onSelectLead}:any) {
+function PipelineView({leads,onSelectLead}:any) {
+  const [selectedStatus,setSelectedStatus]=useState(KANBAN_STATUSES[0]);
+  const [monthFilter,setMonthFilter]=useState("All");
+  const [followFilter,setFollowFilter]=useState("All");
+  const todayKey=new Date().toISOString().split("T")[0];
+  const months=useMemo(()=>{
+    const keys=Array.from(new Set(leads.map((lead:any)=>calendarMonthKey(parseLeadDate(lead.tripDate))).filter(Boolean))) as string[];
+    return keys.sort();
+  },[leads]);
+  function hasDueToday(lead:any) {
+    return (lead.reminders||[]).some((r:any)=>!r.isCompleted && r.dueDate===todayKey);
+  }
+  function hasOverdueFollowUp(lead:any) {
+    return (lead.reminders||[]).some((r:any)=>!r.isCompleted && r.dueDate && r.dueDate<todayKey);
+  }
+  const filterMatches=useMemo(()=>leads.filter((lead:any)=>{
+    if(monthFilter!=="All" && calendarMonthKey(parseLeadDate(lead.tripDate))!==monthFilter) return false;
+    if(followFilter==="Due Today" && !hasDueToday(lead)) return false;
+    if(followFilter==="Overdue" && !hasOverdueFollowUp(lead)) return false;
+    if(followFilter==="Touched Today" && !isSameLocalDay(leadTouchDate(lead))) return false;
+    if(followFilter==="Not Touched Today" && isSameLocalDay(leadTouchDate(lead))) return false;
+    return true;
+  }),[leads,monthFilter,followFilter]);
+  const selectedLeads=useMemo(()=>filterMatches
+    .filter((lead:any)=>lead.status===selectedStatus)
+    .sort((a:any,b:any)=>{
+      const aTouched=isSameLocalDay(leadTouchDate(a))?1:0;
+      const bTouched=isSameLocalDay(leadTouchDate(b))?1:0;
+      if(aTouched!==bTouched) return bTouched-aTouched;
+      const aOverdue=hasOverdueFollowUp(a)?1:0;
+      const bOverdue=hasOverdueFollowUp(b)?1:0;
+      if(aOverdue!==bOverdue) return bOverdue-aOverdue;
+      const aDue=hasDueToday(a)?1:0;
+      const bDue=hasDueToday(b)?1:0;
+      if(aDue!==bDue) return bDue-aDue;
+      return (leadTouchDate(b)?.getTime()||0)-(leadTouchDate(a)?.getTime()||0);
+    }),[filterMatches,selectedStatus]);
+  const ss:any={padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:12,color:T.muted,background:T.faint,outline:"none",fontFamily:"inherit"};
   return (
-    <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:16,alignItems:"flex-start"}}>
-      {KANBAN_STATUSES.map(status=>{
-        const columnLeads=leads.filter((lead:any)=>lead.status===status);
-        const meta=STATUS_META[status];
-        const value=columnLeads.reduce((sum:number,lead:any)=>sum+Number(lead.quoteSentValue||lead.budget||0),0);
-        return (
-          <div key={status} style={{minWidth:218,maxWidth:238,flexShrink:0,opacity:status==="Lost"?0.75:1}}>
-            <div style={{background:meta.col,border:`1.5px solid ${meta.bg}`,borderRadius:"10px 10px 0 0",padding:"10px 12px"}}>
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginBottom:14}}>
+        {KANBAN_STATUSES.map(status=>{
+          const meta=STATUS_META[status];
+          const statusLeads=filterMatches.filter((lead:any)=>lead.status===status);
+          const value=statusLeads.reduce((sum:number,lead:any)=>sum+Number(lead.quoteSentValue||lead.budget||0),0);
+          const overdue=statusLeads.filter(hasOverdueFollowUp).length;
+          const active=selectedStatus===status;
+          return (
+            <button key={status} onClick={()=>setSelectedStatus(status)} style={{textAlign:"left",background:active?meta.col:"#fff",border:`1.5px solid ${active?meta.dot:T.border}`,borderRadius:10,padding:"12px 14px",cursor:"pointer",fontFamily:"inherit"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
-                <span style={{fontWeight:800,fontSize:13,color:meta.text}}>{statusLabel(status)}</span>
-                <span style={{background:meta.bg,color:meta.text,fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:999}}>{columnLeads.length}</span>
+                <span style={{fontSize:12,fontWeight:900,color:meta.text}}>{statusLabel(status)}</span>
+                <span style={{background:meta.bg,color:meta.text,fontSize:12,fontWeight:900,padding:"2px 8px",borderRadius:999}}>{statusLeads.length}</span>
               </div>
-              {value>0&&<div style={{fontSize:11,color:meta.text,opacity:0.7,marginTop:3}}>{money(value)}</div>}
-            </div>
-            <div style={{background:"#f5f9fa",border:`1.5px solid ${meta.bg}`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:"4px 10px",minHeight:82}}>
-              {columnLeads.length===0&&<div style={{textAlign:"center",padding:"20px 0",color:"#94a3b8",fontSize:12}}>Empty</div>}
-              {columnLeads.map((lead:any)=>{
-                const agent=TEAM[lead.assignedTo];
-                return (
-                  <div key={lead.id} onClick={()=>onSelectLead(lead)} style={{padding:"10px 0",borderBottom:`1px solid ${T.border}`,cursor:"pointer"}} onMouseEnter={e=>(e.currentTarget as any).style.background="#fff"} onMouseLeave={e=>(e.currentTarget as any).style.background="transparent"}>
-                    <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start"}}>
-                      <div style={{minWidth:0}}>
-                        <div style={{fontWeight:800,fontSize:13,color:T.navy,lineHeight:1.3,wordBreak:"break-word"}}>{lead.name}</div>
-                        <div style={{fontSize:11,color:T.muted,marginTop:3}}>{lead.destination||lead.landingPage||"-"}</div>
-                        <div style={{fontSize:11,color:T.muted,marginTop:3}}>{lead.source||"-"}{lead.tags?.[0]?` | ${lead.tags[0]}`:""}{lead.isOverdue?" | Overdue":""}</div>
-                      </div>
-                      {agent&&<div title={agent.name} style={{width:24,height:24,borderRadius:999,border:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:T.muted,background:"#fff",flexShrink:0}}>{agent.initials}</div>}
-                    </div>
-                    <div style={{fontSize:12,fontWeight:800,color:T.teal,marginTop:5}}>{money(lead.quoteSentValue||lead.budget||0)}</div>
+              <div style={{fontSize:18,fontWeight:900,color:T.navy,marginTop:8}}>{money(value)}</div>
+              <div style={{fontSize:11,color:overdue?"#b91c1c":T.muted,marginTop:4}}>{overdue ? `${overdue} overdue follow-up${overdue!==1?"s":""}` : "No overdue follow-ups"}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginBottom:12,background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:10}}>
+        <select value={monthFilter} onChange={e=>setMonthFilter(e.target.value)} style={ss}>
+          <option value="All">All Travel Months</option>
+          {months.map((key:string)=><option key={key} value={key}>{calendarMonthLabel(key)}</option>)}
+        </select>
+        <select value={followFilter} onChange={e=>setFollowFilter(e.target.value)} style={ss}>
+          {["All","Due Today","Overdue","Touched Today","Not Touched Today"].map(option=><option key={option} value={option}>{option}</option>)}
+        </select>
+        <div style={{fontSize:12,color:T.muted,marginLeft:"auto"}}>
+          Showing <strong style={{color:T.navy}}>{selectedLeads.length}</strong> {statusLabel(selectedStatus)} lead{selectedLeads.length!==1?"s":""}
+        </div>
+      </div>
+
+      <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden"}}>
+        <div style={{padding:"12px 14px",borderBottom:`1px solid ${T.border}`,background:T.faint,display:"flex",justifyContent:"space-between",gap:12}}>
+          <div style={{fontSize:13,fontWeight:900,color:T.navy}}>{statusLabel(selectedStatus)}</div>
+          <div style={{fontSize:12,color:T.muted}}>Touched today leads stay on top</div>
+        </div>
+        {selectedLeads.length===0&&<div style={{textAlign:"center",padding:"34px 16px",color:"#94a3b8",fontSize:13}}>No leads in this status for the selected filters.</div>}
+        {selectedLeads.map((lead:any)=>{
+          const meta=STATUS_META[lead.status]||STATUS_META.New;
+          const touched=leadTouchDate(lead);
+          const touchedToday=isSameLocalDay(touched);
+          const endDate=getLeadEndDate(lead.tripDate,lead.days)||"-";
+          const quote=Number(lead.quoteSentValue||lead.budget||0);
+          return (
+            <div key={lead.id} onClick={()=>onSelectLead(lead)} style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) auto",gap:14,alignItems:"center",padding:"13px 14px",borderBottom:`1px solid ${T.faint}`,cursor:"pointer"}} onMouseEnter={e=>(e.currentTarget as any).style.background="#fbfdfe"} onMouseLeave={e=>(e.currentTarget as any).style.background=""}>
+              <div style={{minWidth:0}}>
+                <div style={{display:"grid",gridTemplateColumns:"minmax(180px,1.4fr) 110px minmax(130px,1fr) 70px 110px 110px 110px",gap:10,alignItems:"center"}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:900,color:T.navy,lineHeight:1.25}}>{lead.name}</div>
+                    <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>{lead.email||lead.source||"-"}</div>
                   </div>
-                );
-              })}
+                  <div style={{fontSize:12,color:T.navy,fontWeight:700}}>{lead.phone||"-"}</div>
+                  <div style={{fontSize:12,color:T.navy}}>{lead.destination||lead.landingPage||"-"}</div>
+                  <div style={{fontSize:12,color:T.navy,fontWeight:800}}>{lead.paxCount||"-"}</div>
+                  <div><TablePill>{formatLeadDate(lead.tripDate)||"-"}</TablePill></div>
+                  <div><TablePill>{endDate}</TablePill></div>
+                  <div style={{fontSize:12,fontWeight:900,color:T.teal}}>{quote?money(quote):"Rs. 0"}</div>
+                </div>
+                {(hasOverdueFollowUp(lead)||hasDueToday(lead))&&(
+                  <div style={{marginTop:7,fontSize:11,color:hasOverdueFollowUp(lead)?"#b91c1c":"#92400e"}}>
+                    {hasOverdueFollowUp(lead)?"Overdue follow-up":hasDueToday(lead)?"Follow-up due today":""}
+                  </div>
+                )}
+              </div>
+              <div style={{display:"flex",justifyContent:"flex-end"}}>
+                <span style={{whiteSpace:"nowrap",fontSize:11,fontWeight:900,color:touchedToday?"#166534":T.muted,background:touchedToday?"#dcfce7":meta.bg,border:`1px solid ${touchedToday?"#bbf7d0":meta.bg}`,borderRadius:999,padding:"6px 10px"}}>
+                  {touchedLabel(lead)}
+                </span>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -2052,7 +2152,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
   const filtered=useMemo(()=>{
     let r=leads;
     if(search){const q=search.toLowerCase();r=r.filter((l:any)=>l.name.toLowerCase().includes(q)||l.phone?.includes(q)||l.destination?.toLowerCase().includes(q)||l.landingPage?.toLowerCase().includes(q)||l.email?.toLowerCase().includes(q));}
-    if(statusF!=="All")r=r.filter((l:any)=>l.status===statusF);
+    if(statusF!=="All" && view!=="kanban")r=r.filter((l:any)=>l.status===statusF);
     if(sourceF!=="All")r=r.filter((l:any)=>l.source===sourceF);
     if(agentF!=="All")r=r.filter((l:any)=>l.assignedTo===agentF);
     if(bookedView && activeBookedMonth) r=r.filter((l:any)=>calendarMonthKey(bookedDateForLead(l))===activeBookedMonth);
@@ -2060,7 +2160,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
       if(bookedView) return (bookedDateForLead(a)?.getTime()||0)-(bookedDateForLead(b)?.getTime()||0);
       return new Date(b.bookedAt||b.updatedAt||b.createdAt||0).getTime()-new Date(a.bookedAt||a.updatedAt||a.createdAt||0).getTime();
     });
-  },[leads,search,statusF,sourceF,agentF,bookedView,bookedDateMode,activeBookedMonth]);
+  },[leads,search,statusF,sourceF,agentF,bookedView,bookedDateMode,activeBookedMonth,view]);
 
   function leadDateKey(lead:any) {
     const date:any=bookedView ? bookedDateForLead(lead) : new Date(lead.bookedAt || lead.updatedAt || lead.createdAt || lead.receivedAt || Date.now());
@@ -2206,7 +2306,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
         <select value={sourceF} onChange={e=>setSourceF(e.target.value)} style={ss}><option value="All">All Sources</option>{LEAD_SOURCES.map(s=><option key={s}>{s}</option>)}</select>
         {currentUser==="owner"&&<select value={agentF} onChange={e=>setAgentF(e.target.value)} style={ss}><option value="All">All Agents</option>{leadAgentIds.map((id:string)=><option key={id} value={id}>{team[id]?.name || id}</option>)}</select>}
         <div style={{display:"flex",border:`1.5px solid ${T.border}`,borderRadius:8,overflow:"hidden"}}>
-          {(["table","kanban"] as const).map(m=><button key={m} onClick={()=>setView(m)} style={{padding:"7px 14px",background:view===m?T.navy:"transparent",color:view===m?"#fff":T.muted,border:"none",cursor:"pointer",fontSize:12,fontWeight:600}}>{m==="table"?"☰ Table":"⬛ Kanban"}</button>)}
+          {(["table","kanban"] as const).map(m=><button key={m} onClick={()=>setView(m)} style={{padding:"7px 14px",background:view===m?T.navy:"transparent",color:view===m?"#fff":T.muted,border:"none",cursor:"pointer",fontSize:12,fontWeight:600}}>{m==="table"?"☰ Table":"Pipeline"}</button>)}
         </div>
         <div style={{display:"flex",gap:6,marginLeft:"auto"}}>
           <Btn variant="secondary" onClick={()=>setGmail(true)}>📧 Import Gmail</Btn>
@@ -2215,7 +2315,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
       </div>
 
       {gmail&&<Modal title="Import Leads from Gmail" onClose={()=>setGmail(false)}><GmailImportPanel onImport={importGmail} existingLeads={leads}/></Modal>}
-      {view==="kanban"&&<KanbanCompactView leads={filtered} onSelectLead={onSelectLead}/>}
+      {view==="kanban"&&<PipelineView leads={filtered} onSelectLead={onSelectLead}/>}
 
       {view==="table"&&(
         <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden"}}>
@@ -2561,9 +2661,14 @@ export default function ReifyCRM() {
   };
   const persistLead=(lead:any)=>void fetch("/api/leads",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({lead})});
   const persistLeads=(newLeads:any[])=>void fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({leads:newLeads})});
-  const updateLead=(u:any)=>{setLeads(p=>p.map(l=>l.id===u.id?u:l));setSelected(u);persistLead(u);};
+  const updateLead=(u:any)=>{
+    const touched={...u,lastTouchedAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+    setLeads(p=>p.map(l=>l.id===u.id?touched:l));
+    setSelected(touched);
+    persistLead(touched);
+  };
   const deleteLead=(id:string)=>{setLeads(p=>p.filter(l=>l.id!==id)); void fetch(`/api/leads?id=${encodeURIComponent(id)}`,{method:"DELETE"}); if(selected?.id===id) setSelected(null);};
-  const createLead=(d:any)=>{const lead={...d,id:"L"+Date.now(),createdAt:new Date().toISOString(),lastContact:"",nextFollowUp:"",daysInPipeline:0,isOverdue:false,followUpLog:[],reminders:[]};setLeads(p=>[lead,...p]);persistLead(lead);setShowAdd(false);};
+  const createLead=(d:any)=>{const now=new Date().toISOString();const lead={...d,id:"L"+Date.now(),createdAt:now,updatedAt:now,lastTouchedAt:now,lastContact:"",nextFollowUp:"",daysInPipeline:0,isOverdue:false,followUpLog:[],reminders:[]};setLeads(p=>[lead,...p]);persistLead(lead);setShowAdd(false);};
   const addLeads=(nl:any[])=>{setLeads(p=>[...nl,...p]);persistLeads(nl);};
   const buildIncomingLead=(l:any)=>({
     id:"L"+Date.now()+Math.random(),
