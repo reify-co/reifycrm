@@ -258,6 +258,48 @@ function TablePill({children,tone="default"}:any) {
 }
 
 // ─── EMPTY STATE ──────────────────────────────────────────────────────────────
+function startOfLocalDay(date=new Date()) {
+  const d=new Date(date);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function daysBetween(target:any, base=new Date()) {
+  const date=parseLeadDate(target);
+  if(!date) return null;
+  return Math.ceil((startOfLocalDay(date).getTime()-startOfLocalDay(base).getTime())/86400000);
+}
+
+function isReminderDue(reminder:any, date=new Date()) {
+  const due=parseLeadDate(reminder?.dueDate);
+  if(!due || reminder?.isCompleted) return false;
+  return startOfLocalDay(due).getTime()<=startOfLocalDay(date).getTime();
+}
+
+function leadPriority(lead:any) {
+  if(["Booked","Lost"].includes(lead.status)) return {score:0,level:"Low",reasons:["Closed lead"]};
+  let score=0;
+  const reasons:string[]=[];
+  if((lead.reminders||[]).some((r:any)=>isReminderDue(r))) {score+=45; reasons.push("Reminder due");}
+  if((lead.tags||[]).some((tag:string)=>tag.includes("Hot"))) {score+=25; reasons.push("Hot lead");}
+  if((lead.tags||[]).some((tag:string)=>tag.includes("Warm"))) {score+=12; reasons.push("Warm lead");}
+  if(lead.status==="Interested") {score+=25; reasons.push("Interested");}
+  if(lead.status==="Proposal Sent") {score+=18; reasons.push("Proposal sent");}
+  if(lead.status==="New" && !(lead.followUpLog||[]).length) {score+=20; reasons.push("New enquiry");}
+  if(lead.status==="No Response") {score+=8; reasons.push("Needs retry");}
+  const value=Number(lead.quoteSentValue||lead.budget||0);
+  if(value>=100000) {score+=12; reasons.push("High value");}
+  else if(value>=50000) {score+=6; reasons.push("Good value");}
+  const tripDays=daysBetween(lead.tripDate);
+  if(tripDays!==null && tripDays>=0 && tripDays<=15) {score+=18; reasons.push("Travel soon");}
+  else if(tripDays!==null && tripDays>=0 && tripDays<=30) {score+=12; reasons.push("Upcoming trip");}
+  return {
+    score,
+    level:score>=55?"High":score>=28?"Medium":"Low",
+    reasons:reasons.length?reasons:["Normal priority"],
+  };
+}
+
 const INITIAL_LEADS: any[] = [];
 const DEV_SAMPLE_LEADS: any[] = [{
   id:"DEV-MEG-001",
@@ -1454,6 +1496,154 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
   );
 }
 
+function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,onAutoSyncToggle,lastChecked="",currentUser,team=TEAM,activeLeadTaker,onTakeLeads,onStopTakingLeads,onPassLeadTaker,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
+  const agent=team[currentUser] || team.owner;
+  const activeLeads=leads.filter((l:any)=>l.status!=="Lost");
+  const booked=leads.filter((l:any)=>l.status==="Booked");
+  const revenue=booked.reduce((sum:number,l:any)=>sum+Number(l.budget||0),0);
+  const overdue=leads.filter((l:any)=>l.isOverdue || (l.reminders||[]).some((r:any)=>isReminderDue(r))).length;
+  const priority=[...activeLeads]
+    .map((lead:any)=>({...lead,_priority:leadPriority(lead)}))
+    .filter((lead:any)=>lead._priority.score>0)
+    .sort((a:any,b:any)=>b._priority.score-a._priority.score || new Date(b.createdAt||0).getTime()-new Date(a.createdAt||0).getTime())
+    .slice(0,8);
+  const today=startOfLocalDay();
+  const dueReminders=activeLeads.flatMap((lead:any)=>(lead.reminders||[])
+    .filter((r:any)=>!r.isCompleted && parseLeadDate(r.dueDate))
+    .map((r:any)=>({lead,reminder:r,due:parseLeadDate(r.dueDate)})))
+    .filter((item:any)=>startOfLocalDay(item.due).getTime()<=today.getTime())
+    .sort((a:any,b:any)=>a.due.getTime()-b.due.getTime())
+    .slice(0,6);
+  const maxStage=Math.max(1,...KANBAN_STATUSES.map(status=>activeLeads.filter((l:any)=>l.status===status).length));
+  const takingLeads=activeLeadTaker?.agentId===currentUser;
+  const otherAgents=leadAgentIds.filter((id:string)=>id!==currentUser);
+  const statCards=[
+    {label:"My Total Leads",value:leads.length,sub:"Assigned to me",color:T.navy},
+    {label:"Booked",value:booked.length,sub:"Confirmed trips",color:"#15803d"},
+    {label:"My Revenue",value:money(revenue),sub:"Booked value",color:"#15803d"},
+    {label:"Overdue",value:overdue,sub:"Needs attention",color:"#b91c1c"},
+  ];
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:16}}>
+        <div>
+          <h1 style={{margin:0,fontSize:23,color:T.navy,fontWeight:800,fontFamily:"'Segoe UI',sans-serif"}}>Good morning, {agent.name}</h1>
+          <div style={{fontSize:12,color:T.muted,marginTop:4}}>
+            {new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"short"})} - here is your workspace for today
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
+          <span style={{padding:"7px 11px",borderRadius:999,background:takingLeads?"#dcfce7":"#f1f5f9",color:takingLeads?"#15803d":T.muted,fontSize:12,fontWeight:800,border:`1px solid ${takingLeads?"#bbf7d0":T.border}`}}>
+            {takingLeads?"Taking leads today":"Not taking new leads"}
+          </span>
+          <span style={{padding:"7px 11px",borderRadius:999,background:autoSync?"#dcfce7":"#f1f5f9",color:autoSync?"#15803d":T.muted,fontSize:12,fontWeight:800,border:`1px solid ${autoSync?"#bbf7d0":T.border}`}}>
+            Auto Sync {autoSync?"ON":"OFF"}
+          </span>
+        </div>
+      </div>
+
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,background:autoSync?"#ecfdf5":T.faint,border:`1px solid ${autoSync?"#bbf7d0":T.border}`,borderRadius:10,padding:"11px 14px",marginBottom:14}}>
+        <div>
+          <div style={{fontSize:13,fontWeight:800,color:autoSync?"#166534":T.navy}}>Gmail auto-sync is {autoSync?"active":"off"}</div>
+          <div style={{fontSize:11,color:autoSync?"#15803d":T.muted,marginTop:2}}>
+            {lastChecked?`Last checked ${lastChecked}. `:""}New emails will be saved for the active lead taker.
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end"}}>
+          {!takingLeads&&<Btn small onClick={()=>onTakeLeads(currentUser)}>I am taking leads</Btn>}
+          {takingLeads&&<Btn small variant="secondary" onClick={()=>onStopTakingLeads(currentUser)}>Stop taking leads</Btn>}
+          {takingLeads&&otherAgents.map((id:string)=><Btn key={id} small variant="ghost" onClick={()=>onPassLeadTaker(id,currentUser)}>Pass to {team[id]?.name || id}</Btn>)}
+          <Btn small variant={autoSync?"secondary":"primary"} onClick={onAutoSyncToggle}>{autoSync?"Stop Sync":"Sync Now"}</Btn>
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(160px,1fr))",gap:10,marginBottom:14}}>
+        {statCards.map(card=>(
+          <div key={card.label} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"13px 14px",boxShadow:"0 1px 0 rgba(13,45,58,0.02)"}}>
+            <div style={{fontSize:21,fontWeight:900,color:card.color,lineHeight:1}}>{card.value}</div>
+            <div style={{fontSize:10,color:T.muted,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.06em",marginTop:10}}>{card.label}</div>
+            <div style={{height:2,background:card.color,opacity:0.35,marginTop:10,borderRadius:99}}/>
+            <div style={{fontSize:11,color:T.muted,marginTop:7}}>{card.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"minmax(560px,1.35fr) minmax(330px,0.95fr)",gap:12,alignItems:"start"}}>
+        <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 16px",minHeight:420}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div>
+              <div style={{fontSize:12,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em"}}>Priority Leads to Work</div>
+              <div style={{fontSize:11,color:T.muted,marginTop:3}}>Sorted by reminders, heat, status, trip date, and value.</div>
+            </div>
+            <Btn small variant="ghost" onClick={onAddLead}>Add lead manually</Btn>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1.2fr 120px 1fr 100px 34px",gap:8,padding:"8px 10px",fontSize:10,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`1px solid ${T.faint}`}}>
+            <div>Lead</div><div>Status</div><div>Why priority</div><div>Value</div><div></div>
+          </div>
+          {priority.length===0&&<div style={{padding:"42px 10px",textAlign:"center",color:"#94a3b8",fontSize:13}}>No urgent priority leads right now.</div>}
+          {priority.map((lead:any)=>(
+            <div key={lead.id} onClick={()=>onSelectLead(lead)} style={{display:"grid",gridTemplateColumns:"1.2fr 120px 1fr 100px 34px",gap:8,alignItems:"center",padding:"11px 10px",borderBottom:`1px solid ${T.faint}`,cursor:"pointer"}}
+              onMouseEnter={e=>(e.currentTarget as any).style.background=T.faint}
+              onMouseLeave={e=>(e.currentTarget as any).style.background="transparent"}>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:800,color:T.navy,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{lead.name}</div>
+                <div style={{fontSize:11,color:T.muted,marginTop:2}}>{lead.destination||lead.landingPage||"-"} - {lead.days||"-"} days</div>
+              </div>
+              <StatusBadge status={lead.status}/>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                {lead._priority.reasons.slice(0,2).map((reason:string)=><span key={reason} style={{fontSize:11,fontWeight:700,color:lead._priority.level==="High"?"#b91c1c":T.muted,background:lead._priority.level==="High"?"#fee2e2":T.faint,border:`1px solid ${lead._priority.level==="High"?"#fecaca":T.border}`,borderRadius:999,padding:"3px 7px"}}>{reason}</span>)}
+              </div>
+              <div style={{fontSize:12,fontWeight:900,color:T.navy}}>{money(lead.quoteSentValue||lead.budget||0)}</div>
+              <button onClick={(e)=>{e.stopPropagation();onSelectLead(lead);}} style={{width:26,height:26,borderRadius:8,border:`1px solid ${T.border}`,background:T.faint,color:T.muted,cursor:"pointer"}}>--</button>
+            </div>
+          ))}
+        </div>
+
+        <div style={{display:"grid",gap:12}}>
+          <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 16px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={{fontSize:12,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em"}}>Today's Follow-ups</div>
+              {dueReminders.length>0&&<span style={{fontSize:11,fontWeight:800,color:"#92400e",background:"#fef3c7",padding:"3px 8px",borderRadius:999}}>{dueReminders.length} due</span>}
+            </div>
+            {dueReminders.length===0&&<div style={{padding:"24px 0",textAlign:"center",fontSize:13,color:"#94a3b8"}}>No due follow-ups.</div>}
+            {dueReminders.map((item:any)=>(
+              <div key={`${item.lead.id}-${item.reminder.id}`} onClick={()=>onSelectLead(item.lead)} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"9px 10px",border:`1px solid ${T.faint}`,borderRadius:8,marginBottom:7,cursor:"pointer",background:"#fbfdfe"}}>
+                <input type="checkbox" readOnly checked={false} style={{marginTop:2}}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:800,color:T.navy}}>{item.lead.name}</div>
+                  <div style={{fontSize:11,color:T.muted,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.reminder.note}</div>
+                </div>
+                <span style={{fontSize:10,fontWeight:800,color:"#92400e",background:"#fef3c7",borderRadius:999,padding:"3px 7px"}}>{item.reminder.dueTime || "Due"}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 16px"}}>
+            <div style={{fontSize:12,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:12}}>Pipeline by Stage</div>
+            {KANBAN_STATUSES.map(status=>{
+              const meta=STATUS_META[status];
+              const count=activeLeads.filter((l:any)=>l.status===status).length;
+              const value=activeLeads.filter((l:any)=>l.status===status).reduce((sum:number,l:any)=>sum+Number(l.quoteSentValue||l.budget||0),0);
+              return <div key={status} style={{display:"grid",gridTemplateColumns:"110px 1fr 74px",gap:8,alignItems:"center",marginBottom:8}}>
+                <div style={{fontSize:12,color:T.navy,fontWeight:700}}><span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:meta.dot,marginRight:7}}/>{statusLabel(status)}</div>
+                <div style={{height:5,borderRadius:99,background:T.faint,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.max(4,(count/maxStage)*100)}%`,background:meta.dot,borderRadius:99}}/></div>
+                <div style={{fontSize:11,color:T.muted,textAlign:"right"}}>{count} {value?money(value):""}</div>
+              </div>;
+            })}
+          </div>
+
+          <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"18px 16px",textAlign:"center"}}>
+            <div style={{width:34,height:34,borderRadius:10,background:"#fee2e2",color:"#b91c1c",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px",fontWeight:900}}>M</div>
+            <div style={{fontSize:13,fontWeight:900,color:T.navy}}>Connect Gmail & Search</div>
+            <div style={{fontSize:11,color:T.muted,margin:"5px 0 12px"}}>Import leads directly from Gmail when auto-sync is off.</div>
+            <Btn variant="secondary" style={{width:"100%",justifyContent:"center"}} onClick={onOpenInbox}>Import from Gmail</Btn>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TeamSettingsPage({team,setTeam,leadAgentIds,setLeadAgentIds}:any) {
   const [form,setForm]=useState({name:"",initials:"",color:"#1a7a8a"});
   const leadAgents=leadAgentIds.map((id:string)=>team[id]).filter(Boolean);
@@ -2012,7 +2202,7 @@ export default function ReifyCRM() {
         if(!cancelled) {
           setSignedInUser(mapped);
           setUser(mapped);
-          setTab(mapped==="owner"?"dashboard":"leads");
+          setTab("dashboard");
         }
       } catch {
         if(!cancelled) {
@@ -2176,14 +2366,15 @@ export default function ReifyCRM() {
   const activeVisible=visible.filter((l:any)=>l.status!=="Lost");
   const cancelledVisible=visible.filter((l:any)=>l.status==="Lost");
   const pendingCount=leads.flatMap((l:any)=>l.reminders.filter((r:any)=>!r.isCompleted)).length;
+  const isTeamUser=leadAgentIds.includes(user);
 
   const nav=[
-    {id:"dashboard",icon:"📊",label:"Dashboard",  roles:["owner"]},
+    {id:"dashboard",icon:"DB",label:"Dashboard",  roles:["owner",...leadAgentIds]},
     {id:"inbox",    icon:"IN",label:"Lead Inbox",  roles:["owner",...leadAgentIds], badge:0},
-    {id:"team",     icon:"👥",label:"Team",        roles:["owner"],          badge:0},
-    {id:"settings", icon:"⚙",label:"Team Settings",roles:["owner"],          badge:0},
-    {id:"allleads", icon:"📋",label:"All Leads",   roles:["owner"],          badge:leads.length},
-    {id:"leads",    icon:"👤",label:"My All Leads",roles:leadAgentIds, badge:activeVisible.length},
+    {id:"team",     icon:"TM",label:"Team",        roles:["owner"],          badge:0},
+    {id:"settings", icon:"ST",label:"Team Settings",roles:["owner"],          badge:0},
+    {id:"allleads", icon:"AL",label:"All Leads",   roles:["owner"],          badge:leads.length},
+    {id:"leads",    icon:"ML",label:"My All Leads",roles:leadAgentIds, badge:activeVisible.length},
     {id:"cancelled",icon:"X", label:"Cancelled by Me",roles:leadAgentIds, badge:cancelledVisible.length},
   ].filter(n=>n.roles.includes(user));
 
@@ -2211,7 +2402,7 @@ export default function ReifyCRM() {
         <div style={{padding:"12px 14px",borderBottom:`1px solid ${T.navyMid}`}}>
           <div style={{fontSize:10,color:"#2d5060",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700}}>{signedInUser==="owner"?"Viewing As":"Signed In"}</div>
           {(signedInUser==="owner"?Object.values(team):[team[signedInUser]]).filter(Boolean).map((u:any)=>(
-            <button key={u.id} onClick={()=>{if(signedInUser==="owner"){setUser(u.id);setTab(u.id==="owner"?"dashboard":"leads");}}} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",cursor:signedInUser==="owner"?"pointer":"default",marginBottom:4,background:user===u.id?T.navyMid:"transparent",transition:"background 0.15s"}}>
+            <button key={u.id} onClick={()=>{if(signedInUser==="owner"){setUser(u.id);setTab("dashboard");}}} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,border:"none",cursor:signedInUser==="owner"?"pointer":"default",marginBottom:4,background:user===u.id?T.navyMid:"transparent",transition:"background 0.15s"}}>
               <Avatar initials={u.initials} color={user===u.id?u.color:"#3d6070"} size={24}/>
               <div style={{textAlign:"left"}}>
                 <div style={{fontSize:12,fontWeight:700,color:user===u.id?T.accent:"#4a8090"}}>{u.name}</div>
@@ -2233,13 +2424,13 @@ export default function ReifyCRM() {
           ))}
         </nav>
 
-        {pendingCount>0&&(
+        {!isTeamUser&&pendingCount>0&&(
           <div style={{margin:"0 10px 10px",padding:"10px 12px",background:"rgba(26,122,138,0.15)",borderRadius:10,border:`1px solid ${T.teal}44`}}>
             <div style={{fontSize:11,fontWeight:700,color:T.accent}}>🔔 {pendingCount} pending reminder{pendingCount!==1?"s":""}</div>
           </div>
         )}
 
-        <div style={{margin:"0 10px 10px",padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${T.navyMid}`}}>
+        {!isTeamUser&&<div style={{margin:"0 10px 10px",padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${T.navyMid}`}}>
           <div style={{fontSize:10,color:"#4a8090",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>New Lead Taker</div>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
             {activeLeadTaker?.agentId&&team[activeLeadTaker.agentId]?<Avatar initials={team[activeLeadTaker.agentId].initials} color={team[activeLeadTaker.agentId].color} size={24}/>:null}
@@ -2264,16 +2455,16 @@ export default function ReifyCRM() {
               ))}
             </div>
           )}
-        </div>
+        </div>}
 
-        <div style={{margin:"0 10px 10px",padding:"10px 12px",background:autoSync?"rgba(34,197,94,0.14)":"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${autoSync?"#22c55e55":T.navyMid}`}}>
+        {!isTeamUser&&<div style={{margin:"0 10px 10px",padding:"10px 12px",background:autoSync?"rgba(34,197,94,0.14)":"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${autoSync?"#22c55e55":T.navyMid}`}}>
           <button onClick={()=>setAutoSync(v=>!v)} style={{width:"100%",padding:"7px 8px",borderRadius:8,border:"none",background:autoSync?"#dcfce7":T.navyMid,color:autoSync?"#15803d":T.accent,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
             {autoSync?"Auto Sync ON":"Start Auto Sync"}
           </button>
           <div style={{fontSize:10,color:autoSync?"#86efac":"#4a8090",marginTop:6,lineHeight:1.4}}>
             {autoSync?`Runs across all tabs${lastAutoSyncChecked?` - ${lastAutoSyncChecked}`:""}`:"Gmail sync stays active after tab switch."}
           </div>
-        </div>
+        </div>}
 
         <div style={{padding:"12px 14px",borderTop:`1px solid ${T.navyMid}`}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2291,7 +2482,7 @@ export default function ReifyCRM() {
 
       {/* ── Main ── */}
       <main style={{flex:1,overflow:"auto",padding:24}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+        {!(tab==="dashboard"&&isTeamUser)&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
           <div>
             <h1 style={{margin:0,fontFamily:"Georgia,serif",fontSize:26,color:T.navy}}>
               {tab==="dashboard"&&"Owner Dashboard"}
@@ -2305,9 +2496,10 @@ export default function ReifyCRM() {
             <p style={{margin:"4px 0 0",fontSize:13,color:T.muted}}>{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})} · {team[user].name}</p>
           </div>
           {(tab==="allleads"||tab==="leads")&&<Btn onClick={()=>setShowAdd(true)}>+ Add Lead Manually</Btn>}
-        </div>
+        </div>}
 
-        {tab==="dashboard"&&<OwnerDashboard leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} onSelectLead={selectLead} currentUser={user} activeLeadTaker={activeLeadTaker} onTakeLeads={takeLeads} onStopTakingLeads={stopTakingLeads} onPassLeadTaker={passLeadTaker} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="dashboard"&&user==="owner"&&<OwnerDashboard leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} onSelectLead={selectLead} currentUser={user} activeLeadTaker={activeLeadTaker} onTakeLeads={takeLeads} onStopTakingLeads={stopTakingLeads} onPassLeadTaker={passLeadTaker} team={team} leadAgentIds={leadAgentIds}/>}
+        {tab==="dashboard"&&isTeamUser&&<TeamDailyDashboard leads={visible} onSelectLead={selectLead} onAddLead={()=>setShowAdd(true)} onOpenInbox={()=>setTab("inbox")} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked} currentUser={user} team={team} activeLeadTaker={activeLeadTaker} onTakeLeads={takeLeads} onStopTakingLeads={stopTakingLeads} onPassLeadTaker={passLeadTaker} leadAgentIds={leadAgentIds}/>}
         {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked} currentUser={user} team={team} leadAgentIds={leadAgentIds} activeLeadTaker={activeLeadTaker}/>}
         {tab==="team"     &&<TeamPerformancePage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
