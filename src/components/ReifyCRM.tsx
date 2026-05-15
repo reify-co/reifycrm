@@ -376,14 +376,18 @@ function Modal({title,onClose,children,width=580}:any) {
     </div>
   );
 }
-function Inp({label,value,onChange,type="text",options,required,placeholder,fullWidth,hint}:any) {
+function Inp({label,value,onChange,type="text",options,suggestions,required,placeholder,fullWidth,hint}:any) {
   const base:any={width:"100%",padding:"9px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,color:T.navy,background:T.faint,outline:"none",fontFamily:"inherit",boxSizing:"border-box"};
+  const listId=suggestions&&label?`${String(label).toLowerCase().replace(/[^a-z0-9]+/g,"-")}-suggestions`:undefined;
   return (
     <div style={{marginBottom:14,gridColumn:fullWidth?"1/-1":undefined}}>
       {label&&<label style={{display:"block",fontSize:12,fontWeight:600,color:T.muted,marginBottom:5}}>{label}{required&&<span style={{color:"#ef4444"}}>*</span>}</label>}
       {options?<select value={value} onChange={e=>onChange(e.target.value)} style={base}><option value="">Select...</option>{options.map((o:string)=><option key={o} value={o}>{statusLabel(o)}</option>)}</select>
       :type==="textarea"?<textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={3} style={{...base,resize:"vertical"}}/>
-      :<input type={type} value={value} onChange={(e:any)=>onChange(e.target.value)} placeholder={placeholder} style={base}/>}
+      :<>
+        <input type={type} value={value} onChange={(e:any)=>onChange(e.target.value)} placeholder={placeholder} list={listId} style={base}/>
+        {suggestions&&<datalist id={listId}>{suggestions.map((o:string)=><option key={o} value={o}/>)}</datalist>}
+      </>}
       {hint&&<div style={{fontSize:11,color:T.muted,marginTop:4}}>{hint}</div>}
     </div>
   );
@@ -519,7 +523,7 @@ function LeadForm({lead,onSave,onCancel,currentUser,leaveData={},team=TEAM,leadA
       <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.border}`,marginTop:4}}>Enquiry Details</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
         <Inp label="Landing Page / Campaign" value={f.landingPage} onChange={s("landingPage")} options={LANDING_PAGES}/>
-        <Inp label="Destination" value={f.destination} onChange={s("destination")} options={DESTINATIONS}/>
+        <Inp label="Destination" value={f.destination} onChange={s("destination")} suggestions={DESTINATIONS} placeholder="Type or choose destination"/>
         <Inp label="State" value={f.state} onChange={s("state")} placeholder="e.g. Meghalaya"/>
         <Inp label="Trip Date" value={f.tripDate} onChange={s("tripDate")} type="date"/>
         <Inp label="No. of Days" value={f.days} onChange={s("days")} type="number" placeholder="e.g. 5"/>
