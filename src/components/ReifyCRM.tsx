@@ -1516,6 +1516,9 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
     .slice(0,6);
   const maxStage=Math.max(1,...KANBAN_STATUSES.map(status=>activeLeads.filter((l:any)=>l.status===status).length));
   const takingLeads=activeLeadTaker?.agentId===currentUser;
+  const activeAgentId=activeLeadTaker?.agentId || "";
+  const activeAgent=activeAgentId ? team[activeAgentId] : null;
+  const leadTakerLabel=activeAgent ? `${activeAgent.name} taking leads` : "No active lead taker";
   const otherAgents=leadAgentIds.filter((id:string)=>id!==currentUser);
   const statCards=[
     {label:"My Total Leads",value:leads.length,sub:"Assigned to me",color:T.navy},
@@ -1533,8 +1536,8 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
           </div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
-          <span style={{padding:"7px 11px",borderRadius:999,background:takingLeads?"#dcfce7":"#f1f5f9",color:takingLeads?"#15803d":T.muted,fontSize:12,fontWeight:800,border:`1px solid ${takingLeads?"#bbf7d0":T.border}`}}>
-            {takingLeads?"Taking leads today":"Not taking new leads"}
+          <span style={{padding:"7px 11px",borderRadius:999,background:takingLeads?"#dcfce7":activeAgent?"#fef3c7":"#f1f5f9",color:takingLeads?"#15803d":activeAgent?"#92400e":T.muted,fontSize:12,fontWeight:800,border:`1px solid ${takingLeads?"#bbf7d0":activeAgent?"#fde68a":T.border}`}}>
+            {leadTakerLabel}
           </span>
           <span style={{padding:"7px 11px",borderRadius:999,background:autoSync?"#dcfce7":"#f1f5f9",color:autoSync?"#15803d":T.muted,fontSize:12,fontWeight:800,border:`1px solid ${autoSync?"#bbf7d0":T.border}`}}>
             Auto Sync {autoSync?"ON":"OFF"}
@@ -1546,7 +1549,7 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
         <div>
           <div style={{fontSize:13,fontWeight:800,color:autoSync?"#166534":T.navy}}>Gmail auto-sync is {autoSync?"active":"off"}</div>
           <div style={{fontSize:11,color:autoSync?"#15803d":T.muted,marginTop:2}}>
-            {lastChecked?`Last checked ${lastChecked}. `:""}New emails will be saved for the active lead taker.
+            {lastChecked?`Last checked ${lastChecked}. `:""}New emails will be saved under {activeAgent?.name || "whoever starts taking leads"}.
           </div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end"}}>
