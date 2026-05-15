@@ -2311,20 +2311,53 @@ function BookedCalendarView({leads,monthKey,mode,onSelectLead,team}:any) {
   Object.keys(byDay).forEach(day=>{
     byDay[Number(day)].sort((a:any,b:any)=>(a.name||"").localeCompare(b.name||""));
   });
+  const destinationCounts=Object.entries(leads.reduce((acc:Record<string,number>,lead:any)=>{
+    const destination=lead.destination || lead.landingPage || "Not specified";
+    acc[destination]=(acc[destination]||0)+1;
+    return acc;
+  },{})).sort((a:any,b:any)=>b[1]-a[1] || a[0].localeCompare(b[0]));
+  const statColors=[
+    {bg:"#ffffff",dot:"#7c8b95",num:"#0d2d3a"},
+    {bg:"#f5fbf8",dot:"#7b927f",num:"#3f6d48"},
+    {bg:"#f7fbfd",dot:"#6c8c98",num:"#427789"},
+    {bg:"#fbf9f4",dot:"#9b8b66",num:"#7a6745"},
+    {bg:"#f9f7fc",dot:"#9183a3",num:"#6f5c87"},
+  ];
+  const monthStatCards=[
+    [mode==="travel"?"Total trips this month":"Total bookings this month",leads.length],
+    ...destinationCounts,
+  ];
+  function dayLabel(date:Date) {
+    return date.toLocaleDateString("en-IN",{day:"2-digit",month:"short"}).replace(" ","-");
+  }
 
   return (
-    <div style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,padding:"14px 16px",borderBottom:`1px solid ${T.border}`,background:"#fbfdfe"}}>
+    <div style={{background:"#f4fafb",border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden"}}>
+      <div style={{padding:"16px",borderBottom:`1px solid ${T.border}`,background:"#f7fcfd"}}>
         <div>
           <div style={{fontSize:18,fontWeight:900,color:T.navy}}>{calendarMonthLabel(monthKey)}</div>
           <div style={{fontSize:12,color:T.muted,marginTop:3}}>
             {mode==="travel"?"Trips starting this month":"Bookings saved this month"} - {leads.length} lead{leads.length!==1?"s":""}
           </div>
         </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginTop:14}}>
+          {monthStatCards.map(([label,count]:any,index:number)=>{
+            const color=statColors[index%statColors.length];
+            return (
+              <div key={label} style={{background:color.bg,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px",boxShadow:"0 1px 0 rgba(13,45,58,0.03)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:12}}>
+                  <span style={{width:7,height:7,borderRadius:999,background:color.dot,display:"inline-block"}}/>
+                  <span style={{fontSize:10,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>
+                </div>
+                <div style={{fontSize:22,fontWeight:900,color:color.num,fontFamily:"Georgia,serif",lineHeight:1}}>{count}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(140px,1fr))",background:T.border,gap:1,overflowX:"auto"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(140px,1fr))",background:"#d9edf2",gap:1,overflowX:"auto",padding:1}}>
         {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(day=>(
-          <div key={day} style={{background:"#f8fcfd",padding:"10px 12px",fontSize:11,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.04em"}}>
+          <div key={day} style={{background:"#eef7f9",padding:"10px 12px",fontSize:11,fontWeight:900,color:T.muted,textTransform:"uppercase",letterSpacing:"0.04em"}}>
             {day}
           </div>
         ))}
@@ -2335,12 +2368,12 @@ function BookedCalendarView({leads,monthKey,mode,onSelectLead,team}:any) {
           const key=cellDate?.toLocaleDateString("en-CA") || "";
           const dayLeads=inMonth?(byDay[day]||[]):[];
           return (
-            <div key={index} style={{minHeight:132,padding:10,background:inMonth?"#fbfdfe":"#f8fafc",boxShadow:key===todayKey?`inset 0 0 0 2px ${T.accent}`:"none"}}>
+            <div key={index} style={{minHeight:132,padding:10,background:inMonth?"#fbfdfe":"#f3f8fa",boxShadow:key===todayKey?`inset 0 0 0 2px ${T.accent}`:"none"}}>
               {inMonth&&(
                 <>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                    <span style={{fontSize:13,fontWeight:900,color:key===todayKey?T.teal:T.navy}}>{day}</span>
-                    {dayLeads.length>0&&<span style={{fontSize:10,fontWeight:900,color:T.muted,background:"#eef7f8",border:`1px solid ${T.border}`,borderRadius:999,padding:"2px 7px"}}>{dayLeads.length}</span>}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:8,background:"#eef3f1",borderRadius:6,padding:"5px 7px"}}>
+                    <span style={{fontSize:12,fontWeight:900,color:key===todayKey?T.teal:T.navy}}>{cellDate?dayLabel(cellDate):day}</span>
+                    {dayLeads.length>0&&<span style={{width:20,height:20,borderRadius:999,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:T.navy,background:"#d7e4df"}}>{dayLeads.length}</span>}
                   </div>
                   <div style={{display:"grid",gap:6}}>
                     {dayLeads.map((lead:any,i:number)=>{
