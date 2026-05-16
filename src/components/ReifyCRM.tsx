@@ -2158,12 +2158,12 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
     if(bookedView && activeBookedMonth) r=r.filter((l:any)=>calendarMonthKey(bookedDateForLead(l))===activeBookedMonth);
     return [...r].sort((a:any,b:any)=>{
       if(bookedView) return (bookedDateForLead(a)?.getTime()||0)-(bookedDateForLead(b)?.getTime()||0);
-      return new Date(b.bookedAt||b.updatedAt||b.createdAt||0).getTime()-new Date(a.bookedAt||a.updatedAt||a.createdAt||0).getTime();
+      return new Date(b.receivedAt||b.createdAt||0).getTime()-new Date(a.receivedAt||a.createdAt||0).getTime();
     });
   },[leads,search,statusF,sourceF,agentF,bookedView,bookedDateMode,activeBookedMonth,view]);
 
   function leadDateKey(lead:any) {
-    const date:any=bookedView ? bookedDateForLead(lead) : new Date(lead.bookedAt || lead.updatedAt || lead.createdAt || lead.receivedAt || Date.now());
+    const date:any=bookedView ? bookedDateForLead(lead) : new Date(lead.receivedAt || lead.createdAt || Date.now());
     return !date || Number.isNaN(date.getTime()) ? "unknown" : date.toLocaleDateString("en-CA");
   }
 
@@ -2215,6 +2215,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
       paxCount:l.paxCount,budget:0,
       quoteSentValue:0,
       message:l.message,gclid:l.gclid,
+      receivedAt:l.receivedAt||new Date().toISOString(),
       createdAt:new Date().toISOString(),lastContact:"",nextFollowUp:"",
       daysInPipeline:0,isOverdue:false,tags:[],
       notes:`Imported from Gmail. Landing page: ${l.landingPage}`,
@@ -2689,6 +2690,7 @@ export default function ReifyCRM() {
       message:l.message||"",
       gclid:l.gclid||"",
       gmailMessageId:l.gmailMessageId||"",
+    receivedAt:l.receivedAt||new Date().toISOString(),
     createdAt:new Date().toISOString(),
     lastContact:"",
     nextFollowUp:"",
