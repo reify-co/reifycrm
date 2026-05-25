@@ -36,6 +36,8 @@ const HEAT_TAGS  = ["🔥 Hot","🌤 Warm","❄️ Cold"];
 const BUDGET_TAGS= ["💚 Budget","💛 Mid","🔴 Premium"];
 const MONTHS     = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const ACTIVITY_OPTIONS = ["ILP","J.Safari","E.Safari","Cruise","Boat","Bum","Nath","DDB Guid","Krem Guid","Zip","Cksm brdg","Splt rok gd","Bmb Guid","Mamluh Guid","Raft","Cake","Room Decor"];
+const BACKUP_DB_NAME = "reify_crm_backup_handles";
+const BACKUP_STORE_NAME = "handles";
 
 const STATUS_META: Record<string,any> = {
   "New":          {bg:"#dbeafe",text:"#1e40af",dot:"#3b82f6",col:"#eff6ff"},
@@ -52,6 +54,52 @@ function statusLabel(status:string) {
 }
 function money(value:any) {
   return `Rs. ${Number(value||0).toLocaleString("en-IN")}`;
+}
+
+function openBackupDb(): Promise<IDBDatabase> {
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open(BACKUP_DB_NAME,1);
+    request.onupgradeneeded=()=>request.result.createObjectStore(BACKUP_STORE_NAME);
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+  });
+}
+
+async function getStoredBackupHandle(key:string) {
+  const db=await openBackupDb();
+  return await new Promise<any>((resolve,reject)=>{
+    const tx=db.transaction(BACKUP_STORE_NAME,"readonly");
+    const request=tx.objectStore(BACKUP_STORE_NAME).get(key);
+    request.onsuccess=()=>resolve(request.result || null);
+    request.onerror=()=>reject(request.error);
+  }).finally(()=>db.close());
+}
+
+async function setStoredBackupHandle(key:string, handle:any) {
+  const db=await openBackupDb();
+  return await new Promise<void>((resolve,reject)=>{
+    const tx=db.transaction(BACKUP_STORE_NAME,"readwrite");
+    tx.objectStore(BACKUP_STORE_NAME).put(handle,key);
+    tx.oncomplete=()=>resolve();
+    tx.onerror=()=>reject(tx.error);
+  }).finally(()=>db.close());
+}
+
+async function requestBackupPermission(handle:any) {
+  if(!handle?.queryPermission || !handle?.requestPermission) return true;
+  const opts={mode:"readwrite"};
+  if(await handle.queryPermission(opts)==="granted") return true;
+  return await handle.requestPermission(opts)==="granted";
+}
+
+async function writeBackupHandle(handle:any, payload:any) {
+  const writable=await handle.createWritable();
+  await writable.write(JSON.stringify(payload,null,2));
+  await writable.close();
+}
+
+function backupFileNameFor(userId:string) {
+  return userId==="owner" ? "reify-crm-owner-full-backup.json" : `reify-crm-${userId}-backup.json`;
 }
 const SOURCE_COLORS: Record<string,any> = {
   "Ads-Email":   {bg:"#dbeafe",text:"#1e40af"},
@@ -2549,7 +2597,9 @@ export default function ReifyCRM() {
   const [waLead,setWaLead]         =useState<any>(null);
   const [autoSync,setAutoSync]     =useState(false);
   const [lastAutoSyncChecked,setLastAutoSyncChecked]=useState("");
+  const [backupStatus,setBackupStatus]=useState<any>({connected:false,name:"",lastSaved:"",error:""});
   const leadsRef=useRef<any[]>([]);
+  const backupHandleRef=useRef<any>(null);
 
   useEffect(()=>{
     let cancelled=false;
@@ -2623,6 +2673,27 @@ export default function ReifyCRM() {
   },[leads,leadsLoaded]);
 
   useEffect(()=>{
+    if(!authReady || typeof indexedDB==="undefined") return;
+    let cancelled=false;
+    backupHandleRef.current=null;
+    setBackupStatus({connected:false,name:"",lastSaved:"",error:""});
+    getStoredBackupHandle(`crm-backup-${signedInUser}`)
+      .then(handle=>{
+        if(cancelled || !handle) return;
+        backupHandleRef.current=handle;
+        setBackupStatus({connected:true,name:handle.name || backupFileNameFor(signedInUser),lastSaved:"",error:""});
+      })
+      .catch(()=>{});
+    return ()=>{cancelled=true;};
+  },[authReady,signedInUser]);
+
+  useEffect(()=>{
+    if(!leadsLoaded || !backupHandleRef.current) return;
+    const timer=window.setTimeout(()=>{void saveBackupNow();},1200);
+    return ()=>window.clearTimeout(timer);
+  },[leads,activeLeadTaker,team,leadAgentIds,leadsLoaded,signedInUser]);
+
+  useEffect(()=>{
     leadsRef.current=leads;
   },[leads]);
 
@@ -2643,6 +2714,92 @@ export default function ReifyCRM() {
   },[]);
 
   const visible=user==="owner"?leads:leads.filter((l:any)=>l.assignedTo===user);
+  const backupOwner=signedInUser;
+  const backupKey=`crm-backup-${backupOwner}`;
+  const backupLeads=backupOwner==="owner"?leads:leads.filter((l:any)=>l.assignedTo===backupOwner);
+  const buildBackupPayload=()=>({
+    app:"ReifyCRM",
+    version:1,
+    generatedAt:new Date().toISOString(),
+    scope:backupOwner==="owner"?"owner-full":"agent",
+    userId:backupOwner,
+    userName:team[backupOwner]?.name || backupOwner,
+    counts:{leads:backupLeads.length,totalLeads:leads.length},
+    team,
+    leadAgentIds,
+    settings:{activeLeadTaker},
+    leads:backupLeads,
+  });
+  const saveBackupNow=async(handle=backupHandleRef.current)=>{
+    if(!handle) return;
+    try {
+      const allowed=await requestBackupPermission(handle);
+      if(!allowed) {
+        setBackupStatus((s:any)=>({...s,error:"Backup permission needed. Click Connect Backup again."}));
+        return;
+      }
+      await writeBackupHandle(handle,buildBackupPayload());
+      setBackupStatus({connected:true,name:handle.name || backupFileNameFor(backupOwner),lastSaved:new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}),error:""});
+    } catch(error:any) {
+      setBackupStatus((s:any)=>({...s,error:error?.message || "Backup save failed."}));
+    }
+  };
+  const connectBackup=async()=>{
+    try {
+      const picker=(window as any).showSaveFilePicker;
+      if(!picker) {
+        const blob=new Blob([JSON.stringify(buildBackupPayload(),null,2)],{type:"application/json"});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement("a");
+        a.href=url;
+        a.download=backupFileNameFor(backupOwner);
+        a.click();
+        URL.revokeObjectURL(url);
+        setBackupStatus({connected:false,name:"Downloaded JSON",lastSaved:new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}),error:"Browser cannot auto-update a local file. Use Chrome/Edge for Connect Backup."});
+        return;
+      }
+      const handle=await picker({
+        suggestedName:backupFileNameFor(backupOwner),
+        types:[{description:"JSON Backup",accept:{"application/json":[".json"]}}],
+      });
+      backupHandleRef.current=handle;
+      await setStoredBackupHandle(backupKey,handle);
+      await saveBackupNow(handle);
+    } catch(error:any) {
+      if(error?.name==="AbortError") return;
+      setBackupStatus((s:any)=>({...s,error:error?.message || "Could not connect backup file."}));
+    }
+  };
+  const downloadBackup=()=>{
+    const blob=new Blob([JSON.stringify(buildBackupPayload(),null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=backupFileNameFor(backupOwner);
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const restoreBackup=async(event:any)=>{
+    const file=event.target.files?.[0];
+    event.target.value="";
+    if(!file || signedInUser!=="owner") return;
+    try {
+      const payload=JSON.parse(await file.text());
+      const restored=Array.isArray(payload?.leads)?payload.leads:[];
+      if(!restored.length) {
+        alert("This backup file has no leads.");
+        return;
+      }
+      if(!confirm(`Restore ${restored.length} leads from this backup? This will overwrite matching lead IDs in Supabase.`)) return;
+      const now=new Date().toISOString();
+      const normalized=restored.map((lead:any)=>({...lead,updatedAt:lead.updatedAt || now}));
+      setLeads(normalized);
+      persistLeads(normalized);
+      alert("Backup restore started. Refresh after a few seconds if needed.");
+    } catch(error:any) {
+      alert(error?.message || "Could not restore backup JSON.");
+    }
+  };
   const leaveChange=(id:string,status:string|boolean)=>setLeaveData(p=>({...p,[id]:status===true?"On leave":status===false||status==="Available"?undefined as any:String(status)}));
   const saveActiveLeadTaker=(value:any)=>{
     setActiveLeadTaker(value);
@@ -2833,6 +2990,31 @@ export default function ReifyCRM() {
             {autoSync?`Runs across all tabs${lastAutoSyncChecked?` - ${lastAutoSyncChecked}`:""}`:"Gmail sync stays active after tab switch."}
           </div>
         </div>}
+
+        <div style={{margin:"0 10px 10px",padding:"10px 12px",background:backupStatus.connected?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${backupStatus.connected?"#22c55e55":T.navyMid}`}}>
+          <div style={{fontSize:10,color:"#7fb7c5",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>
+            JSON Backup
+          </div>
+          <div style={{fontSize:11,color:backupStatus.connected?"#bbf7d0":"#7fb7c5",lineHeight:1.35,marginBottom:8,overflowWrap:"anywhere"}}>
+            {backupStatus.connected ? `Connected: ${backupStatus.name || backupFileNameFor(backupOwner)}` : `${backupOwner==="owner"?"Full CRM":"My leads"} backup not connected`}
+            {backupStatus.lastSaved&&<><br/>Saved {backupStatus.lastSaved}</>}
+          </div>
+          <div style={{display:"grid",gap:6}}>
+            <button onClick={connectBackup} style={{width:"100%",padding:"7px 8px",borderRadius:8,border:"none",background:backupStatus.connected?"#dcfce7":T.navyMid,color:backupStatus.connected?"#15803d":T.accent,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+              {backupStatus.connected?"Change Backup File":"Connect Backup JSON"}
+            </button>
+            <button onClick={backupStatus.connected?()=>saveBackupNow():downloadBackup} style={{width:"100%",padding:"6px 8px",borderRadius:8,border:`1px solid ${T.navyMid}`,background:"transparent",color:"#7fb7c5",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              {backupStatus.connected?"Save Backup Now":"Download Backup"}
+            </button>
+            {signedInUser==="owner"&&(
+              <label style={{width:"100%",padding:"6px 8px",borderRadius:8,border:`1px solid ${T.navyMid}`,background:"transparent",color:"#7fb7c5",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textAlign:"center"}}>
+                Restore JSON
+                <input type="file" accept="application/json,.json" onChange={restoreBackup} style={{display:"none"}}/>
+              </label>
+            )}
+          </div>
+          {backupStatus.error&&<div style={{fontSize:10,color:"#fecaca",marginTop:6,lineHeight:1.35}}>{backupStatus.error}</div>}
+        </div>
 
         <div style={{padding:"12px 14px",borderTop:`1px solid ${T.navyMid}`}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
