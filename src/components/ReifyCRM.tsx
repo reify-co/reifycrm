@@ -3155,13 +3155,13 @@ export default function ReifyCRM() {
           ))}
         </nav>
 
-        {!isTeamUser&&pendingCount>0&&(
+        {signedInUser!=="owner" && !isTeamUser&&pendingCount>0&&(
           <div style={{margin:"0 10px 10px",padding:"10px 12px",background:"rgba(26,122,138,0.15)",borderRadius:10,border:`1px solid ${T.teal}44`}}>
             <div style={{fontSize:11,fontWeight:700,color:T.accent}}>🔔 {pendingCount} pending reminder{pendingCount!==1?"s":""}</div>
           </div>
         )}
 
-        {!isTeamUser&&<div style={{margin:"0 10px 10px",padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${T.navyMid}`}}>
+        {signedInUser!=="owner" && !isTeamUser&&<div style={{margin:"0 10px 10px",padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${T.navyMid}`}}>
           <div style={{fontSize:10,color:"#4a8090",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>New Lead Taker</div>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
             {activeLeadTaker?.agentId&&team[activeLeadTaker.agentId]?<Avatar initials={team[activeLeadTaker.agentId].initials} color={team[activeLeadTaker.agentId].color} size={24}/>:null}
@@ -3188,7 +3188,7 @@ export default function ReifyCRM() {
           )}
         </div>}
 
-        {!isTeamUser&&<div style={{margin:"0 10px 10px",padding:"10px 12px",background:autoSync?"rgba(34,197,94,0.14)":"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${autoSync?"#22c55e55":T.navyMid}`}}>
+        {signedInUser!=="owner" && !isTeamUser&&<div style={{margin:"0 10px 10px",padding:"10px 12px",background:autoSync?"rgba(34,197,94,0.14)":"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${autoSync?"#22c55e55":T.navyMid}`}}>
           <button onClick={()=>setAutoSync(v=>!v)} style={{width:"100%",padding:"7px 8px",borderRadius:8,border:"none",background:autoSync?"#dcfce7":T.navyMid,color:autoSync?"#15803d":T.accent,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
             {autoSync?"Auto Sync ON":"Start Auto Sync"}
           </button>
@@ -3197,6 +3197,30 @@ export default function ReifyCRM() {
           </div>
         </div>}
 
+        {signedInUser==="owner" ? (
+          <details style={{margin:"0 10px 10px",padding:"8px 10px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${T.navyMid}`}}>
+            <summary style={{cursor:"pointer",fontSize:11,color:"#7fb7c5",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.06em"}}>
+              JSON Backup {backupStatus.connected?"Connected":"Setup"}
+            </summary>
+            <div style={{fontSize:10,color:backupStatus.connected?"#bbf7d0":"#7fb7c5",lineHeight:1.35,margin:"8px 0",overflowWrap:"anywhere"}}>
+              {backupStatus.connected ? `${backupStatus.name || backupFileNameFor(backupOwner)}` : "Full CRM backup not connected"}
+              {backupStatus.lastSaved&&<><br/>Saved {backupStatus.lastSaved}</>}
+            </div>
+            <div style={{display:"grid",gap:6}}>
+              <button onClick={connectBackup} style={{width:"100%",padding:"6px 8px",borderRadius:8,border:"none",background:backupStatus.connected?"#dcfce7":T.navyMid,color:backupStatus.connected?"#15803d":T.accent,fontSize:11,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                {backupStatus.connected?"Change File":"Connect JSON"}
+              </button>
+              <button onClick={backupStatus.connected?()=>saveBackupNow():downloadBackup} style={{width:"100%",padding:"6px 8px",borderRadius:8,border:`1px solid ${T.navyMid}`,background:"transparent",color:"#7fb7c5",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                {backupStatus.connected?"Save Now":"Download"}
+              </button>
+              <label style={{width:"100%",padding:"6px 8px",borderRadius:8,border:`1px solid ${T.navyMid}`,background:"transparent",color:"#7fb7c5",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textAlign:"center"}}>
+                Restore
+                <input type="file" accept="application/json,.json" onChange={restoreBackup} style={{display:"none"}}/>
+              </label>
+            </div>
+            {backupStatus.error&&<div style={{fontSize:10,color:"#fecaca",marginTop:6,lineHeight:1.35}}>{backupStatus.error}</div>}
+          </details>
+        ) : (
         <div style={{margin:"0 10px 10px",padding:"10px 12px",background:backupStatus.connected?"rgba(34,197,94,0.12)":"rgba(255,255,255,0.04)",borderRadius:10,border:`1px solid ${backupStatus.connected?"#22c55e55":T.navyMid}`}}>
           <div style={{fontSize:10,color:"#7fb7c5",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>
             JSON Backup
@@ -3221,6 +3245,7 @@ export default function ReifyCRM() {
           </div>
           {backupStatus.error&&<div style={{fontSize:10,color:"#fecaca",marginTop:6,lineHeight:1.35}}>{backupStatus.error}</div>}
         </div>
+        )}
 
         <div style={{padding:"12px 14px",borderTop:`1px solid ${T.navyMid}`}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
