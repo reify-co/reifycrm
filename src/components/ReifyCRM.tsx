@@ -13,9 +13,9 @@ const T = {
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const TEAM: Record<string,any> = {
-  owner:   {id:"owner",  name:"You (Owner)",initials:"YO",role:"owner", color:T.teal},
-  nikitha: {id:"nikitha",name:"Nikitha",    initials:"NK",role:"agent", color:"#b45309"},
-  aman:    {id:"aman",   name:"Aman",       initials:"AM",role:"agent", color:"#1d4ed8"},
+  owner:   {id:"owner",  name:"You (Owner)",initials:"YO",role:"owner", color:T.teal,email:"owner@reifytravels.com",active:true,canReceiveLeads:false},
+  nikitha: {id:"nikitha",name:"Nikitha",    initials:"NK",role:"agent", color:"#b45309",email:"nikitha@reifytravels.com",active:true,canReceiveLeads:true},
+  aman:    {id:"aman",   name:"Aman",       initials:"AM",role:"agent", color:"#1d4ed8",email:"aman@reifytravels.com",active:true,canReceiveLeads:true},
 };
 const DEFAULT_LEAD_AGENT_IDS = ["nikitha","aman"];
 const EMAIL_TO_USER: Record<string,string> = {
@@ -101,6 +101,41 @@ async function writeBackupHandle(handle:any, payload:any) {
 function backupFileNameFor(userId:string) {
   return userId==="owner" ? "reify-crm-owner-full-backup.json" : `reify-crm-${userId}-backup.json`;
 }
+
+function normalizeTeamConfig(raw:any=TEAM) {
+  const source={...TEAM,...(raw || {})};
+  return Object.fromEntries(Object.entries(source).map(([id,member]:any)=>[id,{
+    ...TEAM[id],
+    ...member,
+    id:member?.id || id,
+    name:member?.name || TEAM[id]?.name || id,
+    initials:(member?.initials || TEAM[id]?.initials || String(member?.name || id).slice(0,2)).toUpperCase().slice(0,2),
+    role:member?.role || TEAM[id]?.role || "agent",
+    color:member?.color || TEAM[id]?.color || T.teal,
+    email:String(member?.email || TEAM[id]?.email || "").trim().toLowerCase(),
+    active:member?.active !== false,
+    canReceiveLeads:member?.role==="owner" || id==="owner" ? false : member?.canReceiveLeads !== false,
+  }]));
+}
+
+function leadAgentIdsFromTeam(teamConfig:any) {
+  return Object.values(teamConfig)
+    .filter((m:any)=>m.role==="agent" && m.active !== false && m.canReceiveLeads !== false)
+    .map((m:any)=>m.id);
+}
+
+function userIdFromEmail(email:string, teamConfig:any) {
+  const normalized=String(email || "").trim().toLowerCase();
+  if(!normalized) return "owner";
+  const match=Object.values(teamConfig).find((m:any)=>String(m.email || "").toLowerCase()===normalized) as any;
+  return match?.id || EMAIL_TO_USER[normalized] || "owner";
+}
+
+function teamMemberIdFromEmail(email:string) {
+  const local=String(email || "").split("@")[0] || `agent-${Date.now()}`;
+  return local.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || `agent-${Date.now()}`;
+}
+
 const SOURCE_COLORS: Record<string,any> = {
   "Ads-Email":   {bg:"#dbeafe",text:"#1e40af"},
   "Ads-WhatsApp":{bg:"#dcfce7",text:"#15803d"},
@@ -1833,7 +1868,7 @@ function FollowUpBox({title,items,emptyText,onSelectLead,overdue=false}:any) {
   );
 }
 
-function TeamSettingsPage({team,setTeam,leadAgentIds,setLeadAgentIds}:any) {
+function LegacyTeamSettingsPage({team,setTeam,leadAgentIds,setLeadAgentIds}:any) {
   const [form,setForm]=useState({name:"",initials:"",color:"#1a7a8a"});
   const leadAgents=leadAgentIds.map((id:string)=>team[id]).filter(Boolean);
   function addMember() {
@@ -1897,6 +1932,154 @@ function TeamSettingsPage({team,setTeam,leadAgentIds,setLeadAgentIds}:any) {
           })}
         </div>
         <div style={{fontSize:12,color:T.muted,marginTop:12}}>Current roster order: {leadAgents.map((m:any)=>m.name).join(" -> ") || "No active lead receivers"}</div>
+      </div>
+    </div>
+  );
+}
+
+function TeamSettingsPage({team,setTeam,leadAgentIds,setLeadAgentIds,onSaveSettings}:any) {
+  const [form,setForm]=useState({name:"",email:"",initials:"",color:"#1a7a8a"});
+  const [passwords,setPasswords]=useState<Record<string,string>>({});
+  const [busy,setBusy]=useState("");
+  const [saved,setSaved]=useState("");
+  const leadAgents=leadAgentIds.map((id:string)=>team[id]).filter(Boolean);
+  const card:any={background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:"18px 20px"};
+  const smallText:any={fontSize:12,color:T.muted,lineHeight:1.6};
+
+  function updateTeam(nextTeam:any, nextIds=leadAgentIds) {
+    const normalized=normalizeTeamConfig(nextTeam);
+    const filtered=nextIds.filter((id:string)=>normalized[id]?.role==="agent" && normalized[id]?.active !== false && normalized[id]?.canReceiveLeads !== false);
+    setTeam(normalized);
+    setLeadAgentIds(filtered);
+    setSaved("");
+  }
+  function addMember() {
+    const name=form.name.trim();
+    const email=form.email.trim().toLowerCase();
+    if(!name || !email) return alert("Please enter name and email.");
+    const id=teamMemberIdFromEmail(email);
+    if(team[id]) return alert("This team member already exists.");
+    const initials=(form.initials || name.split(" ").map((part:string)=>part[0]).join("")).slice(0,2).toUpperCase();
+    updateTeam({...team,[id]:{id,name,email,initials,role:"agent",color:form.color,active:true,canReceiveLeads:true}},[...leadAgentIds,id]);
+    setForm({name:"",email:"",initials:"",color:"#1a7a8a"});
+  }
+  function patchMember(id:string, patch:any) {
+    const nextTeam={...team,[id]:{...team[id],...patch}};
+    updateTeam(nextTeam,leadAgentIdsFromTeam(nextTeam));
+  }
+  async function saveSettings() {
+    setBusy("settings");
+    setSaved("");
+    try {
+      await onSaveSettings(team,leadAgentIds);
+      setSaved("Team settings saved.");
+    } catch(error:any) {
+      alert(error?.message || "Could not save team settings.");
+    } finally {
+      setBusy("");
+    }
+  }
+  async function callLoginApi(member:any, password:string, method:"POST"|"PATCH") {
+    if(!member.email) return alert("Please add an email first.");
+    if(!password || password.length<6) return alert("Password should be at least 6 characters.");
+    const key=`${method}-${member.id}`;
+    setBusy(key);
+    try {
+      const res=await fetch("/api/team-users",{method,headers:{"Content-Type":"application/json"},body:JSON.stringify({email:member.email,password,fullName:member.name})});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok || !data.ok) throw new Error(data.error || "Login update failed.");
+      setPasswords(p=>({...p,[member.id]:""}));
+      alert(method==="POST" ? (data.created ? "Login created." : "Login already existed, password updated.") : "Password changed.");
+    } catch(error:any) {
+      alert(error?.message || "Login update failed.");
+    } finally {
+      setBusy("");
+    }
+  }
+  return (
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+        <div style={card}>
+          <div style={{fontWeight:800,color:T.navy,fontSize:15,marginBottom:4}}>Owner Access</div>
+          <div style={{...smallText,marginBottom:12}}>Owner is admin-only and will not receive new Gmail leads. Owner can open, edit, back up, and manage every team lead.</div>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,background:T.faint}}>
+            <Avatar initials={team.owner?.initials || "YO"} color={team.owner?.color || T.teal} size={32}/>
+            <div>
+              <div style={{fontSize:13,fontWeight:800,color:T.navy}}>{team.owner?.name || "You (Owner)"}</div>
+              <div style={{fontSize:11,color:T.muted}}>{team.owner?.email || "owner@reifytravels.com"} - Admin only</div>
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:8,alignItems:"end",marginTop:12}}>
+            <Inp label="Owner Password" value={passwords.owner || ""} onChange={(v:string)=>setPasswords(p=>({...p,owner:v}))} type="password" placeholder="Enter new owner password"/>
+            <div style={{marginBottom:14}}>
+              <Btn disabled={busy==="PATCH-owner"} onClick={()=>callLoginApi(team.owner || TEAM.owner,passwords.owner,"PATCH")}>{busy==="PATCH-owner"?"Working...":"Change Password"}</Btn>
+            </div>
+          </div>
+        </div>
+        <div style={card}>
+          <div style={{fontWeight:800,color:T.navy,fontSize:15,marginBottom:12}}>Add Team Member</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 80px 58px",gap:8,alignItems:"end"}}>
+            <Inp label="Name" value={form.name} onChange={(v:string)=>setForm(p=>({...p,name:v}))} placeholder="e.g. Rahul"/>
+            <Inp label="Email" value={form.email} onChange={(v:string)=>setForm(p=>({...p,email:v.toLowerCase()}))} placeholder="rahul@reifytravels.com"/>
+            <Inp label="Initials" value={form.initials} onChange={(v:string)=>setForm(p=>({...p,initials:v.toUpperCase().slice(0,2)}))} placeholder="RK"/>
+            <div style={{marginBottom:14}}>
+              <label style={{display:"block",fontSize:12,fontWeight:600,color:T.muted,marginBottom:5}}>Color</label>
+              <input type="color" value={form.color} onChange={e=>setForm(p=>({...p,color:e.target.value}))} style={{width:"100%",height:36,border:`1px solid ${T.border}`,borderRadius:8,background:"#fff"}}/>
+            </div>
+          </div>
+          <Btn onClick={addMember}>Add to Team</Btn>
+        </div>
+      </div>
+      <div style={card}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div>
+            <div style={{fontWeight:800,color:T.navy,fontSize:15}}>Team Members</div>
+            <div style={smallText}>Active lead receivers can take incoming Gmail leads. Passwords are sent to Supabase Auth and are not stored in CRM settings.</div>
+          </div>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            {saved&&<span style={{fontSize:12,color:"#15803d",fontWeight:700}}>{saved}</span>}
+            <Btn onClick={saveSettings} disabled={busy==="settings"}>{busy==="settings"?"Saving...":"Save Team Settings"}</Btn>
+          </div>
+        </div>
+        <div style={{display:"grid",gap:10}}>
+          {Object.values(team).filter((m:any)=>m.role==="agent").map((m:any)=> {
+            const receiving=leadAgentIds.includes(m.id);
+            const inactive=m.active===false;
+            return (
+              <div key={m.id} style={{border:`1px solid ${receiving?T.accent:T.border}`,borderRadius:10,padding:"12px",background:receiving?T.tealPale:"#fff"}}>
+                <div style={{display:"grid",gridTemplateColumns:"180px 1fr 80px 58px 130px 140px",gap:10,alignItems:"end"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+                    <Avatar initials={m.initials} color={m.color} size={34}/>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:800,color:T.navy}}>{m.name}</div>
+                      <div style={{fontSize:11,color:T.muted}}>{receiving?"Receives leads":inactive?"Inactive":"Not receiving"}</div>
+                    </div>
+                  </div>
+                  <Inp label="Email" value={m.email || ""} onChange={(email:string)=>patchMember(m.id,{email:email.toLowerCase()})}/>
+                  <Inp label="Initials" value={m.initials || ""} onChange={(initials:string)=>patchMember(m.id,{initials:initials.toUpperCase().slice(0,2)})}/>
+                  <div style={{marginBottom:14}}>
+                    <label style={{display:"block",fontSize:12,fontWeight:600,color:T.muted,marginBottom:5}}>Color</label>
+                    <input type="color" value={m.color || T.teal} onChange={e=>patchMember(m.id,{color:e.target.value})} style={{width:"100%",height:36,border:`1px solid ${T.border}`,borderRadius:8,background:"#fff"}}/>
+                  </div>
+                  <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12,fontWeight:700,color:T.navy,marginBottom:19}}>
+                    <input type="checkbox" checked={!inactive} onChange={e=>patchMember(m.id,{active:e.target.checked,canReceiveLeads:e.target.checked ? m.canReceiveLeads !== false : false})} style={{accentColor:T.teal}}/>
+                    Active in CRM
+                  </label>
+                  <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12,fontWeight:700,color:T.navy,marginBottom:19}}>
+                    <input type="checkbox" checked={receiving} disabled={inactive} onChange={e=>patchMember(m.id,{canReceiveLeads:e.target.checked})} style={{accentColor:T.teal}}/>
+                    Receives leads
+                  </label>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"end"}}>
+                  <Inp label="New / Change Password" value={passwords[m.id] || ""} onChange={(v:string)=>setPasswords(p=>({...p,[m.id]:v}))} type="password" placeholder="Enter new password"/>
+                  <div style={{marginBottom:14}}><Btn variant="secondary" disabled={busy===`POST-${m.id}`} onClick={()=>callLoginApi(m,passwords[m.id],"POST")}>{busy===`POST-${m.id}`?"Working...":"Create Login"}</Btn></div>
+                  <div style={{marginBottom:14}}><Btn disabled={busy===`PATCH-${m.id}`} onClick={()=>callLoginApi(m,passwords[m.id],"PATCH")}>{busy===`PATCH-${m.id}`?"Working...":"Change Password"}</Btn></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{fontSize:12,color:T.muted,marginTop:12}}>Current lead receiver order: {leadAgents.map((m:any)=>m.name).join(" -> ") || "No active lead receivers"}</div>
       </div>
     </div>
   );
@@ -2584,6 +2767,7 @@ function BookedCalendarView({leads,monthKey,mode,onSelectLead,team}:any) {
 export default function ReifyCRM() {
   const [user,setUser]             =useState("owner");
   const [signedInUser,setSignedInUser]=useState("owner");
+  const [signedInEmail,setSignedInEmail]=useState("");
   const [authReady,setAuthReady]   =useState(false);
   const [tab,setTab]               =useState("dashboard");
   const [leads,setLeads]           =useState(INITIAL_LEADS);
@@ -2608,8 +2792,9 @@ export default function ReifyCRM() {
         const supabase=createSupabaseClient();
         const {data}=await supabase.auth.getUser();
         const email=(data.user?.email || "").toLowerCase();
-        const mapped=EMAIL_TO_USER[email] || "owner";
+        const mapped=userIdFromEmail(email,team);
         if(!cancelled) {
+          setSignedInEmail(email);
           setSignedInUser(mapped);
           setUser(mapped);
           setTab("dashboard");
@@ -2617,6 +2802,7 @@ export default function ReifyCRM() {
       } catch {
         if(!cancelled) {
           setSignedInUser("owner");
+          setSignedInEmail("");
           setUser("owner");
         }
       } finally {
@@ -2704,6 +2890,15 @@ export default function ReifyCRM() {
         const res=await fetch("/api/settings",{cache:"no-store"});
         const data=await res.json().catch(()=>({}));
         if(!cancelled && res.ok && data.ok) {
+          const nextTeam=normalizeTeamConfig(data.settings?.team || TEAM);
+          const nextLeadAgentIds=Array.isArray(data.settings?.leadAgentIds)
+            ? data.settings.leadAgentIds.filter((id:string)=>nextTeam[id]?.role==="agent" && nextTeam[id]?.active !== false && nextTeam[id]?.canReceiveLeads !== false)
+            : leadAgentIdsFromTeam(nextTeam);
+          const mapped=userIdFromEmail(signedInEmail,nextTeam);
+          setTeam(nextTeam);
+          setLeadAgentIds(nextLeadAgentIds);
+          setSignedInUser(mapped);
+          setUser(prev=>signedInUser==="owner" && prev!==signedInUser ? prev : mapped);
           setActiveLeadTaker(data.settings?.activeLeadTaker || null);
         }
       } catch {}
@@ -2711,7 +2906,7 @@ export default function ReifyCRM() {
     loadSettings();
     const timer=window.setInterval(loadSettings,30000);
     return ()=>{cancelled=true;window.clearInterval(timer);};
-  },[]);
+  },[signedInEmail]);
 
   const visible=user==="owner"?leads:leads.filter((l:any)=>l.assignedTo===user);
   const backupOwner=signedInUser;
@@ -2804,6 +2999,17 @@ export default function ReifyCRM() {
   const saveActiveLeadTaker=(value:any)=>{
     setActiveLeadTaker(value);
     void fetch("/api/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings:{activeLeadTaker:value}})});
+  };
+  const saveTeamSettings=async(nextTeam=team,nextLeadAgentIds=leadAgentIds)=>{
+    const normalized=normalizeTeamConfig(nextTeam);
+    const filtered=nextLeadAgentIds.filter((id:string)=>normalized[id]?.role==="agent" && normalized[id]?.active !== false && normalized[id]?.canReceiveLeads !== false);
+    const nextActiveLeadTaker=activeLeadTaker?.agentId && filtered.includes(activeLeadTaker.agentId) ? activeLeadTaker : null;
+    setTeam(normalized);
+    setLeadAgentIds(filtered);
+    setActiveLeadTaker(nextActiveLeadTaker);
+    const res=await fetch("/api/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({settings:{team:normalized,leadAgentIds:filtered,activeLeadTaker:nextActiveLeadTaker}})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok || !data.ok) throw new Error(data.error || "Unable to save team settings.");
   };
   const takeLeads=(agentId:string)=>saveActiveLeadTaker({agentId,startedBy:user,startedAt:new Date().toISOString()});
   const stopTakingLeads=(changedBy:string)=>saveActiveLeadTaker(null);
@@ -3053,7 +3259,7 @@ export default function ReifyCRM() {
         {tab==="dashboard"&&isTeamUser&&<TeamDailyDashboard leads={visible} onSelectLead={selectLead} onAddLead={()=>setShowAdd(true)} onOpenInbox={()=>setTab("inbox")} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked} currentUser={user} team={team} activeLeadTaker={activeLeadTaker} onTakeLeads={takeLeads} onStopTakingLeads={stopTakingLeads} onPassLeadTaker={passLeadTaker} leadAgentIds={leadAgentIds}/>}
         {tab==="inbox"&&<LeadInboxPage onImport={importIncomingLeads} onManualAdd={addIncomingLead} existingLeads={leads} autoSync={autoSync} onAutoSyncToggle={()=>setAutoSync(v=>!v)} lastChecked={lastAutoSyncChecked} currentUser={user} team={team} leadAgentIds={leadAgentIds} activeLeadTaker={activeLeadTaker}/>}
         {tab==="team"     &&<TeamPerformancePage leads={leads} leaveData={leaveData} onLeaveChange={leaveChange} team={team} leadAgentIds={leadAgentIds}/>}
-        {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds}/>}
+        {tab==="settings" &&<TeamSettingsPage team={team} setTeam={setTeam} leadAgentIds={leadAgentIds} setLeadAgentIds={setLeadAgentIds} onSaveSettings={saveTeamSettings}/>}
         {tab==="allleads"&&<LeadsTable leads={visible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds}/>}
         {tab==="leads"&&<LeadsTable leads={activeVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds} collapsePastDates/>}
         {tab==="booked"&&<LeadsTable leads={bookedVisible} onSelectLead={selectLead} onAddLeads={addLeads} onDeleteLead={deleteLead} currentUser={user} team={team} leadAgentIds={leadAgentIds} bookedView/>}
