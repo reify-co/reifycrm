@@ -1434,8 +1434,6 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
   const overdue=leads.filter((l:any)=>l.isOverdue).length;
   const revenue=leads.filter((l:any)=>l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget||0),0);
   const byStatus=LEAD_STATUSES.map(s=>({status:s,count:leads.filter((l:any)=>l.status===s).length,val:leads.filter((l:any)=>l.status===s).reduce((a:number,l:any)=>a+Number(l.budget||0),0)}));
-  const handovers=leads.filter((l:any)=>l.handover);
-
   // Today's follow-ups
   const todayStr=new Date().toISOString().split("T")[0];
   const todayFU=leads.filter((l:any)=>l.nextFollowUp&&l.nextFollowUp.startsWith(todayStr));
@@ -1449,19 +1447,6 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
 
   return (
     <div>
-      {handovers.length>0&&(
-        <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:"12px 16px",marginBottom:16}}>
-          <div style={{fontSize:13,fontWeight:800,color:"#78350f",marginBottom:8}}>Pending Handovers</div>
-          {handovers.slice(0,3).map((lead:any)=>(
-            <div key={lead.id} onClick={()=>onSelectLead(lead)} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderTop:"1px solid #fde68a",cursor:"pointer"}}>
-              <div style={{fontSize:13,fontWeight:700,color:T.navy,flex:1}}>{lead.name}</div>
-              <div style={{fontSize:12,color:"#78350f"}}>{team[lead.handover.from]?.name} to {team[lead.handover.to]?.name}</div>
-              <div style={{fontSize:11,color:T.muted,maxWidth:260,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{lead.handover.note}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
         {kpis.map(k=>(
