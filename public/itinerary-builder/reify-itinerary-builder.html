@@ -163,6 +163,7 @@
     .embedded .editor-layout {
       margin-top: 0;
     }
+
     .topbar {
       display: flex;
       align-items: center;
@@ -3543,7 +3544,7 @@
     async function saveSharedRouteMaster() {
       if (!CRM_EMBEDDED) return;
       try {
-        const routes = (appState.masterData.routes || []).map(route => normalizeRouteTemplate(route, route.source || "custom"));
+        const routes = mergeRouteTemplates(appState.masterData.routes);
         await fetch(SHARED_ROUTES_ENDPOINT, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -4175,7 +4176,7 @@
       });
     }
 
-    function saveSelectedLead(patch) {
+    function saveSelectedLead(patch, options = {}) {
       const lead = selectedLead();
       if (!lead) return;
       const index = appState.leads.findIndex(item => item.id === lead.id);
@@ -4196,14 +4197,14 @@
       appState.leads[index] = updated;
       appState.selectedLeadId = updated.id;
       saveState();
-      renderEditorPane(activeEditorTab);
+      if (options.renderEditor !== false) renderEditorPane(activeEditorTab);
     }
 
-    function saveItineraryPatch(patch) {
+    function saveItineraryPatch(patch, options = {}) {
       const lead = selectedLead();
       if (!lead || isViewingLockedItineraryVersion(lead)) return;
       const itinerary = normalizeItineraryData(lead, { ...ensureItinerary(lead), ...patch });
-      saveSelectedLead({ itinerary });
+      saveSelectedLead({ itinerary }, options);
     }
 
     function ensureGoodToKnow(data = {}) {
@@ -9974,14 +9975,15 @@
     }
 
     function sightseeingOptionsForDay(lead, day, itinerary = {}) {
-      const towns = new Set([day.from, day.to, day.stay].filter(Boolean).map(item => String(item).trim().toLowerCase()));
+      const routeTowns = new Set([day.from, day.to, day.stay].filter(Boolean).map(item => String(item).trim().toLowerCase()));
       const destination = lead.destination || "";
       return allSightseeingItems(itinerary)
-        .filter(item => towns.has(String(item.town || "").trim().toLowerCase()))
         .sort((a, b) => {
-          const aDestinationMatch = destination && (itemDestinationMatches(a.destination, destination) ? 0 : 1);
-          const bDestinationMatch = destination && (itemDestinationMatches(b.destination, destination) ? 0 : 1);
-          return (aDestinationMatch - bDestinationMatch) || a.name.localeCompare(b.name);
+          const aRouteMatch = routeTowns.has(String(a.town || "").trim().toLowerCase()) ? 0 : 1;
+          const bRouteMatch = routeTowns.has(String(b.town || "").trim().toLowerCase()) ? 0 : 1;
+          const aDestinationMatch = destination && itemDestinationMatches(a.destination, destination) ? 0 : 1;
+          const bDestinationMatch = destination && itemDestinationMatches(b.destination, destination) ? 0 : 1;
+          return (aRouteMatch - bRouteMatch) || (aDestinationMatch - bDestinationMatch) || a.name.localeCompare(b.name);
         });
     }
 
@@ -13471,7 +13473,7 @@
         const dayNumber = Number(target.dataset.overviewSlot);
         const slotIndex = Number(target.dataset.slotIndex);
         const rows = overviewSlotRows(lead, itinerary, dayNumber, slotIndex, target.value);
-        if (rows) saveItineraryPatch({ overviewDays: rows });
+        if (rows) saveItineraryPatch({ overviewDays: rows }, { renderEditor: false });
         return;
       }
       if (target.matches("[data-package-lines]")) {
@@ -13584,7 +13586,7 @@
       }
       if (target.matches("[data-overview-slot]")) {
         const rows = overviewSlotRows(lead, itinerary, Number(target.dataset.overviewSlot), Number(target.dataset.slotIndex), target.value, true);
-        if (rows) saveItineraryPatch({ overviewDays: rows });
+        if (rows) saveItineraryPatch({ overviewDays: rows }, { renderEditor: false });
         return;
       }
       if (target.matches("[data-permit-field]")) {
@@ -14044,22 +14046,27 @@
       renderMobileOutput();
     });
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const embeddedLeadId = urlParams.get("leadId");
-    if (embeddedLeadId) {
-      appState.selectedLeadId = embeddedLeadId;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-    }
-
     renderEditorTabs();
     renderMasterTabs();
-    if (urlParams.get("embedded") === "1" && selectedLead()) {
-      switchView("editor");
-    } else {
-      renderAll();
-    }
+    renderAll();
     loadSharedRouteMaster();
     loadHotelMasterSeed();
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
