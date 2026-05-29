@@ -140,6 +140,7 @@
       padding: 28px;
       min-width: 0;
     }
+
     .embedded body {
       background: #f0f7f9;
     }
@@ -162,7 +163,6 @@
     .embedded .editor-layout {
       margin-top: 0;
     }
-
     .topbar {
       display: flex;
       align-items: center;
@@ -3460,6 +3460,9 @@
     let activeEditorTab = 0;
     let activeMasterTab = 0;
     let cachedDefaultHeroDataUrl = BUILTIN_DEFAULT_HERO_DATA_URL;
+    const CRM_EMBEDDED = new URLSearchParams(window.location.search).get("embedded") === "1";
+    const SHARED_ROUTES_ENDPOINT = "/api/itinerary-routes";
+    let sharedRoutesSaveTimer = null;
 
     function loadState() {
       try {
@@ -3519,6 +3522,61 @@
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
       renderAll();
+    }
+
+    function commitRouteMaster(routes, options = {}) {
+      appState.masterData.routes = (Array.isArray(routes) ? routes : []).map(route => normalizeRouteTemplate(route, route?.source || "custom"));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      scheduleSharedRouteMasterSave();
+      if (options.render !== false) {
+        renderMasterPane(activeMasterTab);
+        renderAll();
+      }
+    }
+
+    function scheduleSharedRouteMasterSave() {
+      if (!CRM_EMBEDDED) return;
+      window.clearTimeout(sharedRoutesSaveTimer);
+      sharedRoutesSaveTimer = window.setTimeout(() => saveSharedRouteMaster(), 450);
+    }
+
+    async function saveSharedRouteMaster() {
+      if (!CRM_EMBEDDED) return;
+      try {
+        const routes = (appState.masterData.routes || []).map(route => normalizeRouteTemplate(route, route.source || "custom"));
+        await fetch(SHARED_ROUTES_ENDPOINT, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ routes })
+        });
+      } catch (error) {
+        console.warn("Route Master sync failed", error);
+      }
+    }
+
+    async function loadSharedRouteMaster() {
+      if (!CRM_EMBEDDED) return;
+      try {
+        const response = await fetch(SHARED_ROUTES_ENDPOINT, { cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) return;
+        if (Array.isArray(data.routes) && data.routes.length) {
+          appState.masterData.routes = data.routes.map(route => normalizeRouteTemplate(route, route.source || "custom"));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+          renderMasterPane(activeMasterTab);
+          renderAll();
+          return;
+        }
+        if (Array.isArray(appState.masterData.routes) && appState.masterData.routes.length) {
+          appState.masterData.routes = appState.masterData.routes.map(route => normalizeRouteTemplate(route, route.source || "custom"));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+          await saveSharedRouteMaster();
+          return;
+        }
+        ensureMasterRoutes();
+      } catch (error) {
+        console.warn("Route Master load failed", error);
+      }
     }
 
     function uid() {
@@ -3928,7 +3986,7 @@
       return lead.itinerary;
     }
 
-    function updateSelectedItineraryVersionMeta(patch = {}) {
+    function updateSelectedItineraryVersionMeta(patch = {}, options = {}) {
       const lead = selectedLead();
       if (!lead) return;
       const index = appState.leads.findIndex(item => item.id === lead.id);
@@ -3945,8 +4003,9 @@
       }) : version);
       lead.updatedAt = now;
       appState.leads[index] = lead;
-      saveState();
-      renderEditorPane(activeEditorTab);
+      if (options.refresh === false) localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      else saveState();
+      if (options.render !== false) renderEditorPane(activeEditorTab);
     }
 
     function loadSelectedItineraryVersion(versionId) {
@@ -12855,6 +12914,10 @@
         updateSelectedItineraryVersionMeta({ status: target.value });
         return;
       }
+      if (target.matches("[data-version-note]")) {
+        updateSelectedItineraryVersionMeta({ note: target.value });
+        return;
+      }
     });
 
     document.getElementById("editorVersionBar").addEventListener("input", event => {
@@ -12862,7 +12925,7 @@
       const lead = selectedLead();
       if (!lead) return;
       if (target.matches("[data-version-note]")) {
-        updateSelectedItineraryVersionMeta({ note: target.value });
+        updateSelectedItineraryVersionMeta({ note: target.value }, { render: false, refresh: false });
       }
     });
 
@@ -12920,10 +12983,7 @@
         const field = target.dataset.routeField;
         const value = field === "totalNights" ? Number(target.value || 0) : target.value.trim();
         routes[index] = normalizeRouteTemplate({ ...(routes[index] || {}), [field]: value }, routes[index]?.source || "custom");
-        appState.masterData.routes = routes;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-        renderMasterPane(activeMasterTab);
-        renderAll();
+        commitRouteMaster(routes);
       }
       if (target.matches("[data-route-stop-field]")) {
         const routes = [...ensureMasterRoutes()];
@@ -12934,10 +12994,7 @@
         const value = field === "nights" ? Number(target.value || 0) : target.value.trim();
         stops[stopIndex] = { ...(stops[stopIndex] || { location: "", nights: 0 }), [field]: value };
         routes[routeIndex] = normalizeRouteTemplate({ ...routes[routeIndex], stops }, routes[routeIndex]?.source || "custom");
-        appState.masterData.routes = routes;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-        renderMasterPane(activeMasterTab);
-        renderAll();
+        commitRouteMaster(routes);
       }
       if (target.matches("[data-hotel-field]")) {
         const hotels = [...ensureMasterHotels()];
@@ -13079,19 +13136,13 @@
           dropLocation: "Guwahati",
           stops: []
         }];
-        appState.masterData.routes = routes;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-        renderMasterPane(activeMasterTab);
-        renderAll();
+        commitRouteMaster(routes);
         return;
       }
       if (removeRouteButton) {
         const routes = [...ensureMasterRoutes()];
         if (routes.length > 1) routes.splice(Number(removeRouteButton.dataset.removeRouteTemplate), 1);
-        appState.masterData.routes = routes;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-        renderMasterPane(activeMasterTab);
-        renderAll();
+        commitRouteMaster(routes);
         return;
       }
       if (addStopButton) {
@@ -13099,10 +13150,7 @@
         const routeIndex = Number(addStopButton.dataset.addRouteStop);
         const stops = [...(routes[routeIndex]?.stops || []), { location: "", nights: 0 }];
         routes[routeIndex] = normalizeRouteTemplate({ ...routes[routeIndex], stops }, routes[routeIndex]?.source || "custom");
-        appState.masterData.routes = routes;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-        renderMasterPane(activeMasterTab);
-        renderAll();
+        commitRouteMaster(routes);
         return;
       }
       if (removeStopButton) {
@@ -13112,10 +13160,7 @@
         const stops = [...(routes[routeIndex]?.stops || [])];
         stops.splice(stopIndex, 1);
         routes[routeIndex] = normalizeRouteTemplate({ ...routes[routeIndex], stops }, routes[routeIndex]?.source || "custom");
-        appState.masterData.routes = routes;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-        renderMasterPane(activeMasterTab);
-        renderAll();
+        commitRouteMaster(routes);
         return;
       }
       if (addHotelButton) {
@@ -13952,8 +13997,7 @@
           dropLocation: itinerary.dropLocation || "Guwahati",
           stops: (itinerary.routeStops || []).map(stop => ({ location: stop.location || "", nights: Number(stop.nights || 0) }))
         };
-        appState.masterData.routes = [...(appState.masterData.routes || []), customRoute];
-        saveState();
+        commitRouteMaster([...(appState.masterData.routes || []), customRoute]);
         saveItineraryPatch({
           routeTemplate: customRoute.id,
           routeTemplateName: customRoute.templateName,
@@ -13997,22 +14041,8 @@
     } else {
       renderAll();
     }
+    loadSharedRouteMaster();
     loadHotelMasterSeed();
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

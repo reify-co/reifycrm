@@ -19,6 +19,7 @@ export async function GET() {
       .from('crm_leads')
       .select('lead')
       .neq('id', '__crm_settings__')
+      .neq('id', '__itinerary_route_master__')
       .order('updated_at', { ascending: false })
 
     if (error) throw error
