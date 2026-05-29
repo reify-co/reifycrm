@@ -3525,7 +3525,7 @@
     }
 
     function commitRouteMaster(routes, options = {}) {
-      appState.masterData.routes = (Array.isArray(routes) ? routes : []).map(route => normalizeRouteTemplate(route, route?.source || "custom"));
+      appState.masterData.routes = mergeRouteTemplates(routes);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
       scheduleSharedRouteMasterSave();
       if (options.render !== false) {
@@ -3561,14 +3561,16 @@
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.ok) return;
         if (Array.isArray(data.routes) && data.routes.length) {
-          appState.masterData.routes = data.routes.map(route => normalizeRouteTemplate(route, route.source || "custom"));
+          const mergedRoutes = mergeRouteTemplates(data.routes);
+          appState.masterData.routes = mergedRoutes;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
           renderMasterPane(activeMasterTab);
           renderAll();
+          if (mergedRoutes.length > data.routes.length) await saveSharedRouteMaster();
           return;
         }
         if (Array.isArray(appState.masterData.routes) && appState.masterData.routes.length) {
-          appState.masterData.routes = appState.masterData.routes.map(route => normalizeRouteTemplate(route, route.source || "custom"));
+          appState.masterData.routes = mergeRouteTemplates(appState.masterData.routes);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
           await saveSharedRouteMaster();
           return;
@@ -9724,13 +9726,29 @@
       };
     }
 
+    function mergeRouteTemplates(routes = []) {
+      const merged = new Map(
+        routeTemplateLibrary.map(route => {
+          const normalized = normalizeRouteTemplate(route, "master");
+          return [normalized.id, normalized];
+        })
+      );
+      (Array.isArray(routes) ? routes : []).forEach(route => {
+        const normalized = normalizeRouteTemplate(route, route?.source || "custom");
+        merged.set(normalized.id, normalized);
+      });
+      return [...merged.values()];
+    }
+
     function ensureMasterRoutes() {
       if (!Array.isArray(appState.masterData.routes)) appState.masterData.routes = [];
-      if (!appState.masterData.routes.length) {
-        appState.masterData.routes = routeTemplateLibrary.map(route => normalizeRouteTemplate(route, "master"));
+      const mergedRoutes = mergeRouteTemplates(appState.masterData.routes);
+      if (mergedRoutes.length !== appState.masterData.routes.length) {
+        appState.masterData.routes = mergedRoutes;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } else {
+        appState.masterData.routes = mergedRoutes;
       }
-      appState.masterData.routes = appState.masterData.routes.map(route => normalizeRouteTemplate(route, route.source || "custom"));
       return appState.masterData.routes;
     }
 
@@ -9796,8 +9814,7 @@
     }
 
     function combinedRouteTemplates() {
-      const editableRoutes = appState.masterData.routes?.length ? appState.masterData.routes : routeTemplateLibrary;
-      return editableRoutes.map(route => normalizeRouteTemplate(route, route.source || "master"));
+      return mergeRouteTemplates(appState.masterData.routes);
     }
 
     function routeTemplatesForDestination(destination = "", totalNights = null) {
