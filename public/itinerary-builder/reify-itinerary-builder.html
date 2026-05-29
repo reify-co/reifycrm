@@ -14046,9 +14046,20 @@
       renderMobileOutput();
     });
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const embeddedLeadId = urlParams.get("leadId");
+    if (embeddedLeadId) {
+      appState.selectedLeadId = embeddedLeadId;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    }
+
     renderEditorTabs();
     renderMasterTabs();
-    renderAll();
+    if (urlParams.get("embedded") === "1" && selectedLead()) {
+      switchView("editor");
+    } else {
+      renderAll();
+    }
     loadSharedRouteMaster();
     loadHotelMasterSeed();
   </script>
