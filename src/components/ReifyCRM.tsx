@@ -990,6 +990,8 @@ function LeadDrawer({lead,onClose,onUpdate,currentUser,onWA,team=TEAM,leadAgentI
 function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
   const [editing,setEditing]=useState(false);
   const [workspaceTab,setWorkspaceTab]=useState("lead");
+  const [editingStat,setEditingStat]=useState("");
+  const [statDraft,setStatDraft]=useState<any>({});
   const agent=team[lead.assignedTo];
   const pendingReminders=(lead.reminders||[]).filter((r:any)=>!r.isCompleted);
   const handoverTo=leadAgentIds.find((id:string)=>id!==lead.assignedTo) || lead.assignedTo;
@@ -1012,6 +1014,64 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
     onUpdate(updated);
     setEditing(false);
   }
+  function openStatEditor(stat:string) {
+    setEditingStat(stat);
+    setStatDraft({
+      name:lead.name||"",
+      phone:lead.phone||"",
+      destination:lead.destination||lead.landingPage||"",
+      paxCount:lead.paxCount||"",
+      days:lead.days||"",
+      tripDate:dateInputValue(lead.tripDate||""),
+      endDate:dateInputValue(getLeadEndDate(lead.tripDate,lead.days)),
+    });
+  }
+  function saveStatEditor() {
+    const next:any={...lead};
+    if(editingStat==="lead") {
+      if(!statDraft.name?.trim() || !statDraft.phone?.trim()) return alert("Name and phone are required.");
+      next.name=statDraft.name.trim();
+      next.phone=statDraft.phone.trim();
+    }
+    if(editingStat==="destination") next.destination=String(statDraft.destination||"").trim();
+    if(editingStat==="pax") next.paxCount=Number(statDraft.paxCount||0);
+    if(editingStat==="travel") next.days=Number(statDraft.days||0);
+    if(editingStat==="start") next.tripDate=statDraft.tripDate||"";
+    if(editingStat==="end") {
+      if(!statDraft.tripDate || !statDraft.endDate) return alert("Start and end dates are required.");
+      const start=parseLeadDate(statDraft.tripDate);
+      const end=parseLeadDate(statDraft.endDate);
+      if(!start || !end) return alert("Please choose valid dates.");
+      const days=Math.max(1,Math.round((startOfLocalDay(end).getTime()-startOfLocalDay(start).getTime())/86400000)+1);
+      next.tripDate=statDraft.tripDate;
+      next.days=days;
+    }
+    onUpdate(next);
+    setEditingStat("");
+    setStatDraft({});
+  }
+  const statInputStyle:any={width:"100%",padding:"7px 9px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,color:T.navy,background:T.faint,outline:"none",fontFamily:"inherit"};
+  const statActions=(
+    <div style={{display:"flex",gap:6,marginTop:10}}>
+      <button type="button" onClick={(e)=>{e.stopPropagation();saveStatEditor();}} style={{border:"none",borderRadius:7,padding:"5px 10px",background:T.navy,color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>Save</button>
+      <button type="button" onClick={(e)=>{e.stopPropagation();setEditingStat("");setStatDraft({});}} style={{border:`1px solid ${T.border}`,borderRadius:7,padding:"5px 10px",background:"#fff",color:T.muted,fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
+    </div>
+  );
+  const statCard=(id:string,label:string,value:any,editor:any)=>(
+    <div
+      key={label}
+      onClick={()=>editingStat!==id && openStatEditor(id)}
+      title="Click to edit"
+      style={{background:"#fff",border:`1px solid ${editingStat===id?T.teal:T.border}`,borderRadius:12,padding:"12px 14px",minHeight:70,cursor:editingStat===id?"default":"pointer",boxShadow:editingStat===id?"0 0 0 3px rgba(26,122,138,0.10)":"none"}}
+    >
+      <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>{label}</div>
+      {editingStat===id ? (
+        <div onClick={e=>e.stopPropagation()}>{editor}{statActions}</div>
+      ) : (
+        <div style={{fontSize:14,color:T.navy,fontWeight:600}}>{value}</div>
+      )}
+    </div>
+  );
   function requestHandover() {
     const note=window.prompt(`Handover this lead to ${team[handoverTo]?.name || handoverTo}. Add a short note for context:`,`Please take this lead while I am unavailable.`);
     if(note===null) return;
@@ -1037,19 +1097,31 @@ function LeadWorkspace({lead,onBack,onUpdate,onDelete,currentUser,onWA,team=TEAM
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(6,minmax(130px,1fr))",gap:10,marginBottom:16}}>
-        {[
-          ["Lead",<div key="lead"><strong>{lead.name}</strong><br/><span style={{fontSize:12,color:T.muted}}>{lead.phone||"-"}</span></div>],
-          ["Destination",lead.destination||lead.landingPage||"-"],
-          ["Pax",lead.paxCount||"-"],
-          ["Travel",lead.days?`${lead.days} Days`:"-"],
-          ["Start",formatLeadDate(lead.tripDate)||"-"],
-          ["End",getLeadEndDate(lead.tripDate,lead.days)||"-"],
-        ].map(([label,value]:any)=>(
-          <div key={label} style={{background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:"12px 14px",minHeight:70}}>
-            <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>{label}</div>
-            <div style={{fontSize:14,color:T.navy,fontWeight:600}}>{value}</div>
+        {statCard("lead","Lead",<div><strong>{lead.name}</strong><br/><span style={{fontSize:12,color:T.muted}}>{lead.phone||"-"}</span></div>,
+          <div style={{display:"grid",gap:8}}>
+            <input value={statDraft.name||""} onChange={e=>setStatDraft((p:any)=>({...p,name:e.target.value}))} placeholder="Lead name" style={statInputStyle}/>
+            <input value={statDraft.phone||""} onChange={e=>setStatDraft((p:any)=>({...p,phone:e.target.value}))} placeholder="Phone" style={statInputStyle}/>
           </div>
-        ))}
+        )}
+        {statCard("destination","Destination",lead.destination||lead.landingPage||"-",
+          <input value={statDraft.destination||""} onChange={e=>setStatDraft((p:any)=>({...p,destination:e.target.value}))} list="leadWorkspaceDestinationOptions" placeholder="Destination" style={statInputStyle}/>
+        )}
+        {statCard("pax","Pax",lead.paxCount||"-",
+          <input type="number" min="0" value={statDraft.paxCount||""} onChange={e=>setStatDraft((p:any)=>({...p,paxCount:e.target.value}))} style={statInputStyle}/>
+        )}
+        {statCard("travel","Travel",lead.days?`${lead.days} Days`:"-",
+          <input type="number" min="1" value={statDraft.days||""} onChange={e=>setStatDraft((p:any)=>({...p,days:e.target.value}))} style={statInputStyle}/>
+        )}
+        {statCard("start","Start",formatLeadDate(lead.tripDate)||"-",
+          <input type="date" value={statDraft.tripDate||""} onChange={e=>setStatDraft((p:any)=>({...p,tripDate:e.target.value}))} style={statInputStyle}/>
+        )}
+        {statCard("end","End",getLeadEndDate(lead.tripDate,lead.days)||"-",
+          <div style={{display:"grid",gap:8}}>
+            <input type="date" value={statDraft.tripDate||""} onChange={e=>setStatDraft((p:any)=>({...p,tripDate:e.target.value}))} style={statInputStyle}/>
+            <input type="date" value={statDraft.endDate||""} onChange={e=>setStatDraft((p:any)=>({...p,endDate:e.target.value}))} style={statInputStyle}/>
+          </div>
+        )}
+        <datalist id="leadWorkspaceDestinationOptions">{DESTINATIONS.map((destination:string)=><option key={destination} value={destination}/>)}</datalist>
       </div>
 
       <div style={{display:"flex",gap:8,marginBottom:16,background:"#fff",border:`1px solid ${T.border}`,borderRadius:12,padding:8,width:"fit-content"}}>
