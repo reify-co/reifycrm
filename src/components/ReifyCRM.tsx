@@ -1778,10 +1778,26 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
 
 function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,onAutoSyncToggle,lastChecked="",currentUser,team=TEAM,activeLeadTaker,onTakeLeads,onStopTakingLeads,onPassLeadTaker,leadAgentIds=DEFAULT_LEAD_AGENT_IDS}:any) {
   const agent=team[currentUser] || team.owner;
-  const activeLeads=leads.filter((l:any)=>l.status!=="Lost");
-  const booked=leads.filter((l:any)=>l.status==="Booked");
+  const currentMonthKey=calendarMonthKey(new Date());
+  const [selectedMonth,setSelectedMonth]=useState(currentMonthKey);
+  const dashboardDateForLead=(lead:any)=>{
+    const date=new Date(lead.receivedAt || lead.createdAt || lead.updatedAt || "");
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+  const dashboardMonths=useMemo<string[]>(()=>{
+    const keys=new Set<string>([currentMonthKey]);
+    leads.forEach((lead:any)=>{
+      const key=calendarMonthKey(dashboardDateForLead(lead));
+      if(key) keys.add(key);
+    });
+    return [...keys].sort((a,b)=>b.localeCompare(a));
+  },[leads,currentMonthKey]);
+  const activeMonth=dashboardMonths.includes(selectedMonth)?selectedMonth:currentMonthKey;
+  const monthLeads=leads.filter((lead:any)=>calendarMonthKey(dashboardDateForLead(lead))===activeMonth);
+  const activeLeads=monthLeads.filter((l:any)=>l.status!=="Lost");
+  const booked=monthLeads.filter((l:any)=>l.status==="Booked");
   const revenue=booked.reduce((sum:number,l:any)=>sum+Number(l.budget||0),0);
-  const overdue=leads.filter((l:any)=>l.isOverdue || (l.reminders||[]).some((r:any)=>isReminderDue(r))).length;
+  const overdue=monthLeads.filter((l:any)=>l.isOverdue || (l.reminders||[]).some((r:any)=>isReminderDue(r))).length;
   const priority=[...activeLeads]
     .map((lead:any)=>({...lead,_priority:leadPriority(lead)}))
     .filter((lead:any)=>lead._priority.score>0)
@@ -1800,7 +1816,7 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
   const leadTakerLabel=activeAgent ? `${activeAgent.name} taking leads` : "No active lead taker";
   const otherAgents=leadAgentIds.filter((id:string)=>id!==currentUser);
   const statCards=[
-    {label:"My Total Leads",value:leads.length,sub:"Assigned to me",color:T.navy},
+    {label:"My Total Leads",value:monthLeads.length,sub:"Assigned to me",color:T.navy},
     {label:"Booked",value:booked.length,sub:"Confirmed trips",color:"#15803d"},
     {label:"My Revenue",value:money(revenue),sub:"Booked value",color:"#15803d"},
     {label:"Overdue",value:overdue,sub:"Needs attention",color:"#b91c1c"},
@@ -1811,7 +1827,7 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
         <div>
           <h1 style={{margin:0,fontSize:23,color:T.navy,fontWeight:800,fontFamily:"'Segoe UI',sans-serif"}}>Good morning, {agent.name}</h1>
           <div style={{fontSize:12,color:T.muted,marginTop:4}}>
-            {new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"short"})} - here is your workspace for today
+            {new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"short"})} - showing {calendarMonthLabel(activeMonth)}
           </div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
@@ -1821,6 +1837,20 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
           <span style={{padding:"7px 11px",borderRadius:999,background:autoSync?"#dcfce7":"#f1f5f9",color:autoSync?"#15803d":T.muted,fontSize:12,fontWeight:800,border:`1px solid ${autoSync?"#bbf7d0":T.border}`}}>
             Auto Sync {autoSync?"ON":"OFF"}
           </span>
+        </div>
+      </div>
+
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 12px",marginBottom:14,flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontSize:12,fontWeight:900,color:T.navy}}>Dashboard Month</div>
+          <div style={{fontSize:11,color:T.muted,marginTop:2}}>Cards and priority list use leads received/created in this month.</div>
+        </div>
+        <div style={{display:"flex",gap:7,flexWrap:"wrap",justifyContent:"flex-end"}}>
+          {dashboardMonths.slice(0,6).map((key:string)=>(
+            <button key={key} onClick={()=>setSelectedMonth(key)} style={{padding:"7px 11px",borderRadius:999,border:`1px solid ${activeMonth===key?T.teal:T.border}`,background:activeMonth===key?T.tealPale:T.faint,color:activeMonth===key?T.navy:T.muted,fontSize:12,fontWeight:900,cursor:"pointer",fontFamily:"inherit"}}>
+              {calendarMonthLabel(key)}
+            </button>
+          ))}
         </div>
       </div>
 
