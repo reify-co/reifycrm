@@ -418,6 +418,10 @@ function leadPriority(lead:any) {
   };
 }
 
+function leadQuoteSentValue(lead:any) {
+  return Number(lead?.quoteSentValue || 0);
+}
+
 const INITIAL_LEADS: any[] = [];
 const DEV_SAMPLE_LEADS: any[] = [{
   id:"DEV-MEG-001",
@@ -1254,7 +1258,7 @@ function KanbanView({leads,onSelectLead}:any) {
       {LEAD_STATUSES.map(status=>{
         const col=leads.filter((l:any)=>l.status===status);
         const m=STATUS_META[status];
-        const val=col.reduce((s:number,l:any)=>s+Number(l.budget),0);
+        const val=col.reduce((s:number,l:any)=>s+leadQuoteSentValue(l),0);
         return (
           <div key={status} style={{minWidth:210,maxWidth:230,flexShrink:0,opacity:status==="Lost"?0.7:1}}>
             <div style={{background:m.col,border:`1.5px solid ${m.bg}`,borderRadius:"12px 12px 0 0",padding:"10px 14px"}}>
@@ -1277,7 +1281,7 @@ function KanbanView({leads,onSelectLead}:any) {
                     <div style={{fontWeight:700,fontSize:13,color:T.navy}}>{lead.name}</div>
                     <div style={{fontSize:11,color:T.muted,marginTop:2}}>📍 {lead.destination||lead.landingPage||"—"}</div>
                     {lead.tags?.length>0&&<div style={{display:"flex",gap:3,flexWrap:"wrap",marginTop:5}}>{lead.tags.slice(0,2).map((t:string)=><span key={t} style={{fontSize:10,background:T.tealPale,color:T.navy,padding:"1px 6px",borderRadius:10}}>{t}</span>)}</div>}
-                    <div style={{fontSize:12,fontWeight:700,color:T.teal,marginTop:5}}>₹{Number(lead.budget||0).toLocaleString("en-IN")}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:T.teal,marginTop:5}}>₹{leadQuoteSentValue(lead).toLocaleString("en-IN")}</div>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8}}>
                       <SourceBadge source={lead.source}/>
                       {agent&&<Avatar initials={agent.initials} color={agent.color} size={22}/>}
@@ -1338,7 +1342,7 @@ function PipelineView({leads,onSelectLead}:any) {
         {KANBAN_STATUSES.map(status=>{
           const meta=STATUS_META[status];
           const statusLeads=filterMatches.filter((lead:any)=>lead.status===status);
-          const value=statusLeads.reduce((sum:number,lead:any)=>sum+Number(lead.quoteSentValue||lead.budget||0),0);
+          const value=statusLeads.reduce((sum:number,lead:any)=>sum+leadQuoteSentValue(lead),0);
           const overdue=statusLeads.filter(hasOverdueFollowUp).length;
           const active=selectedStatus===status;
           return (
@@ -1378,7 +1382,7 @@ function PipelineView({leads,onSelectLead}:any) {
           const touched=leadTouchDate(lead);
           const touchedToday=isSameLocalDay(touched);
           const endDate=getLeadEndDate(lead.tripDate,lead.days)||"-";
-          const quote=Number(lead.quoteSentValue||lead.budget||0);
+          const quote=leadQuoteSentValue(lead);
           return (
             <div key={lead.id} onClick={()=>onSelectLead(lead)} style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) auto",gap:14,alignItems:"center",padding:"13px 14px",borderBottom:`1px solid ${T.faint}`,cursor:"pointer"}} onMouseEnter={e=>(e.currentTarget as any).style.background="#fbfdfe"} onMouseLeave={e=>(e.currentTarget as any).style.background=""}>
               <div style={{minWidth:0}}>
@@ -1504,8 +1508,8 @@ function OwnerDashboard({leads,leaveData,onLeaveChange,onSelectLead,currentUser,
   const total  =leads.length;
   const booked =leads.filter((l:any)=>l.status==="Booked").length;
   const overdue=leads.filter((l:any)=>l.isOverdue).length;
-  const revenue=leads.filter((l:any)=>l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget||0),0);
-  const byStatus=LEAD_STATUSES.map(s=>({status:s,count:leads.filter((l:any)=>l.status===s).length,val:leads.filter((l:any)=>l.status===s).reduce((a:number,l:any)=>a+Number(l.budget||0),0)}));
+  const revenue=leads.filter((l:any)=>l.status==="Booked").reduce((s:number,l:any)=>s+leadQuoteSentValue(l),0);
+  const byStatus=LEAD_STATUSES.map(s=>({status:s,count:leads.filter((l:any)=>l.status===s).length,val:leads.filter((l:any)=>l.status===s).reduce((a:number,l:any)=>a+leadQuoteSentValue(l),0)}));
   // Today's follow-ups
   const todayStr=new Date().toISOString().split("T")[0];
   const todayFU=leads.filter((l:any)=>l.nextFollowUp&&l.nextFollowUp.startsWith(todayStr));
@@ -1588,7 +1592,7 @@ function TeamPage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentIds=DEFAULT_
     booked: leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").length,
     lost:   leads.filter((l:any)=>l.assignedTo===id&&l.status==="Lost").length,
     overdue:leads.filter((l:any)=>l.assignedTo===id&&l.isOverdue).length,
-    revenue:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget),0),
+    revenue:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").reduce((s:number,l:any)=>s+leadQuoteSentValue(l),0),
     sources:LEAD_SOURCES.map(src=>({src,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.source===src).length})).filter(x=>x.cnt>0),
     statuses:LEAD_STATUSES.map(s=>({s,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.status===s).length})),
   }));
@@ -1692,7 +1696,7 @@ function TeamPerformancePage({leads,leaveData,onLeaveChange,team=TEAM,leadAgentI
     booked:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").length,
     lost:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Lost").length,
     overdue:leads.filter((l:any)=>l.assignedTo===id&&l.isOverdue).length,
-    revenue:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").reduce((s:number,l:any)=>s+Number(l.budget||0),0),
+    revenue:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Booked").reduce((s:number,l:any)=>s+leadQuoteSentValue(l),0),
     pipeline:leads.filter((l:any)=>l.assignedTo===id&&l.status==="Interested").reduce((s:number,l:any)=>s+Number(l.quoteSentValue||0),0),
     sources:LEAD_SOURCES.map(src=>({src,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.source===src).length})).filter(x=>x.cnt>0),
     statuses:LEAD_STATUSES.map(status=>({status,cnt:leads.filter((l:any)=>l.assignedTo===id&&l.status===status).length})).filter(x=>x.cnt>0),
@@ -1803,7 +1807,7 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
   const monthLeads=leads.filter((lead:any)=>calendarMonthKey(dashboardDateForLead(lead))===activeMonth);
   const activeLeads=monthLeads.filter((l:any)=>l.status!=="Lost");
   const booked=leads.filter((lead:any)=>calendarMonthKey(dashboardBookedDateForLead(lead))===activeMonth);
-  const revenue=booked.reduce((sum:number,l:any)=>sum+Number(l.budget||0),0);
+  const revenue=booked.reduce((sum:number,l:any)=>sum+leadQuoteSentValue(l),0);
   const overdue=monthLeads.filter((l:any)=>l.isOverdue || (l.reminders||[]).some((r:any)=>isReminderDue(r))).length;
   const priority=[...activeLeads]
     .map((lead:any)=>({...lead,_priority:leadPriority(lead)}))
@@ -1922,7 +1926,7 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
               <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                 {lead._priority.reasons.slice(0,2).map((reason:string)=><span key={reason} style={{fontSize:11,fontWeight:700,color:lead._priority.level==="High"?"#b91c1c":T.muted,background:lead._priority.level==="High"?"#fee2e2":T.faint,border:`1px solid ${lead._priority.level==="High"?"#fecaca":T.border}`,borderRadius:999,padding:"3px 7px"}}>{reason}</span>)}
               </div>
-              <div style={{fontSize:12,fontWeight:900,color:T.navy}}>{money(lead.quoteSentValue||lead.budget||0)}</div>
+              <div style={{fontSize:12,fontWeight:900,color:T.navy}}>{money(leadQuoteSentValue(lead))}</div>
               <button onClick={(e)=>{e.stopPropagation();onSelectLead(lead);}} style={{width:26,height:26,borderRadius:8,border:`1px solid ${T.border}`,background:T.faint,color:T.muted,cursor:"pointer"}}>--</button>
             </div>
           ))}
@@ -2597,7 +2601,7 @@ function LeadsTable({leads,onSelectLead,onAddLeads,onDeleteLead,currentUser,team
   const totalLeads=leads.length;
   const bookedLeads=leads.filter((lead:any)=>lead.status==="Booked").length;
   const pipelineValue=leads.filter((lead:any)=>lead.status==="Interested").reduce((sum:number,lead:any)=>sum+Number(lead.quoteSentValue||0),0);
-  const revenueValue=leads.filter((lead:any)=>lead.status==="Booked").reduce((sum:number,lead:any)=>sum+Number(lead.budget||0),0);
+  const revenueValue=leads.filter((lead:any)=>lead.status==="Booked").reduce((sum:number,lead:any)=>sum+leadQuoteSentValue(lead),0);
   const viewOverdue=leads.filter((lead:any)=>lead.isOverdue).length;
   const statCards=view==="kanban"
     ? [
