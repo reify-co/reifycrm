@@ -1784,18 +1784,25 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
     const date=new Date(lead.receivedAt || lead.createdAt || lead.updatedAt || "");
     return Number.isNaN(date.getTime()) ? null : date;
   };
+  const dashboardBookedDateForLead=(lead:any)=>{
+    if(lead.status!=="Booked") return null;
+    const date=new Date(lead.bookedAt || lead.updatedAt || lead.createdAt || lead.receivedAt || "");
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
   const dashboardMonths=useMemo<string[]>(()=>{
     const keys=new Set<string>([currentMonthKey]);
     leads.forEach((lead:any)=>{
-      const key=calendarMonthKey(dashboardDateForLead(lead));
-      if(key) keys.add(key);
+      const leadKey=calendarMonthKey(dashboardDateForLead(lead));
+      const bookedKey=calendarMonthKey(dashboardBookedDateForLead(lead));
+      if(leadKey) keys.add(leadKey);
+      if(bookedKey) keys.add(bookedKey);
     });
     return [...keys].sort((a,b)=>b.localeCompare(a));
   },[leads,currentMonthKey]);
   const activeMonth=dashboardMonths.includes(selectedMonth)?selectedMonth:currentMonthKey;
   const monthLeads=leads.filter((lead:any)=>calendarMonthKey(dashboardDateForLead(lead))===activeMonth);
   const activeLeads=monthLeads.filter((l:any)=>l.status!=="Lost");
-  const booked=monthLeads.filter((l:any)=>l.status==="Booked");
+  const booked=leads.filter((lead:any)=>calendarMonthKey(dashboardBookedDateForLead(lead))===activeMonth);
   const revenue=booked.reduce((sum:number,l:any)=>sum+Number(l.budget||0),0);
   const overdue=monthLeads.filter((l:any)=>l.isOverdue || (l.reminders||[]).some((r:any)=>isReminderDue(r))).length;
   const priority=[...activeLeads]
@@ -1843,7 +1850,7 @@ function TeamDailyDashboard({leads,onSelectLead,onAddLead,onOpenInbox,autoSync,o
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,background:"#fff",border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 12px",marginBottom:14,flexWrap:"wrap"}}>
         <div>
           <div style={{fontSize:12,fontWeight:900,color:T.navy}}>Dashboard Month</div>
-          <div style={{fontSize:11,color:T.muted,marginTop:2}}>Cards and priority list use leads received/created in this month.</div>
+          <div style={{fontSize:11,color:T.muted,marginTop:2}}>Lead count uses received month. Booked and revenue use booking month.</div>
         </div>
         <div style={{display:"flex",gap:7,flexWrap:"wrap",justifyContent:"flex-end"}}>
           {dashboardMonths.slice(0,6).map((key:string)=>(
@@ -3113,7 +3120,15 @@ export default function ReifyCRM() {
   const persistLead=(lead:any)=>void fetch("/api/leads",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({lead})});
   const persistLeads=(newLeads:any[])=>void fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({leads:newLeads})});
   const updateLead=(u:any)=>{
-    const touched={...u,lastTouchedAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+    const now=new Date().toISOString();
+    const previous=(leadsRef.current || []).find((lead:any)=>lead.id===u.id);
+    const touched={...u,lastTouchedAt:now,updatedAt:now};
+    if(touched.status==="Booked") {
+      const previousBookedFallback=previous?.status==="Booked" ? (previous?.updatedAt || previous?.createdAt || previous?.receivedAt) : "";
+      touched.bookedAt=touched.bookedAt || previous?.bookedAt || previousBookedFallback || now;
+    } else if(previous?.status==="Booked" && touched.bookedAt) {
+      delete touched.bookedAt;
+    }
     setLeads(p=>p.map(l=>l.id===u.id?touched:l));
     setSelected(touched);
     persistLead(touched);
